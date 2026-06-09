@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+
+# Local tooling and OS files
+*.log
+.DS_Store
+.idea/
+.vscode/
