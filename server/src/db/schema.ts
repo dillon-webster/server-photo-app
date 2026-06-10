@@ -8,6 +8,7 @@ export const photos = sqliteTable("photos", {
   size: integer("size").notNull(),
   width: integer("width").notNull(),
   height: integer("height").notNull(),
+  duration: integer("duration"),
   dateTaken: integer("date_taken"),
   dateUploaded: integer("date_uploaded").notNull(),
   latitude: real("latitude"),
