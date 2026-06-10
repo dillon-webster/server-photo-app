@@ -1,7 +1,7 @@
 FROM node:20-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
+    python3 make g++ ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,13 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY server/package.json ./server/
-COPY client/package.json ./client/
-RUN npm ci --omit=dev
-
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/client/dist ./client/dist
+COPY package.json ./
+COPY server/package.json ./server/
 COPY server/src/db/migrations ./server/src/db/migrations
 
 ENV NODE_ENV=production
