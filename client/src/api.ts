@@ -50,7 +50,7 @@ export const api = {
   upload: (
     files: File[],
     onProgress?: (loaded: number, total: number) => void
-  ): Promise<Photo[]> => {
+  ): Promise<{ filename: string; ok: boolean; photo?: Photo }[]> => {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       files.forEach((f) => formData.append("files", f));

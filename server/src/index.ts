@@ -1,10 +1,11 @@
+import "dotenv/config";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import staticFiles from "@fastify/static";
-import { db, runMigrations } from "./db/client.js";
+import { db, sqlite, runMigrations } from "./db/client.js";
 import { ensureUploadDirs } from "./services/upload.js";
 import { uploadRoutes } from "./routes/upload.js";
 import { photoRoutes } from "./routes/photos.js";
@@ -53,3 +54,11 @@ app.setNotFoundHandler(async (req, reply) => {
 });
 
 await app.listen({ port: PORT, host: "0.0.0.0" });
+
+const shutdown = async () => {
+  await app.close();
+  sqlite.close();
+  process.exit(0);
+};
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { unlink } from "fs/promises";
 import { join } from "path";
 import { db } from "../db/client.js";
-import { photos } from "../db/schema.js";
+import { albums, photos } from "../db/schema.js";
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./uploads";
 
@@ -62,7 +62,7 @@ export async function photoRoutes(app: FastifyInstance) {
         country: photos.country,
       })
       .from(photos)
-      .where(isNotNull(photos.latitude))
+      .where(and(isNotNull(photos.latitude), isNotNull(photos.longitude)))
       .all();
   });
 
@@ -80,11 +80,18 @@ export async function photoRoutes(app: FastifyInstance) {
 
     db.delete(photos).where(eq(photos.id, req.params.id)).run();
 
-    const ext = photo.filename.split(".").pop();
-    await Promise.allSettled([
+    db.update(albums)
+      .set({ coverPhotoId: null, updatedAt: Date.now() })
+      .where(eq(albums.coverPhotoId, req.params.id))
+      .run();
+
+    const unlinkResults = await Promise.allSettled([
       unlink(join(UPLOADS_DIR, "originals", photo.filename)),
       unlink(join(UPLOADS_DIR, "thumbnails", `${photo.id}.webp`)),
     ]);
+    for (const r of unlinkResults) {
+      if (r.status === "rejected") req.log.warn({ err: r.reason }, "failed to unlink file on delete");
+    }
 
     return { ok: true };
   });

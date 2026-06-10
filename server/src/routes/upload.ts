@@ -8,15 +8,13 @@ export async function uploadRoutes(app: FastifyInstance) {
 
     for await (const part of parts) {
       if (part.type !== "file") continue;
-
-      const size = parseInt(req.headers["content-length"] ?? "0", 10);
-      const photo = await processUpload(
-        part.file,
-        part.filename,
-        part.mimetype,
-        size
-      );
-      results.push(photo);
+      try {
+        const photo = await processUpload(part.file, part.filename, part.mimetype);
+        results.push({ filename: part.filename, ok: true, photo });
+      } catch (err) {
+        req.log.error({ err, filename: part.filename }, "upload failed");
+        results.push({ filename: part.filename, ok: false });
+      }
     }
 
     return reply.send(results);

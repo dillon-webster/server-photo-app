@@ -14,6 +14,7 @@ sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
 export const db = drizzle(sqlite, { schema });
+export { sqlite };
 
 export function runMigrations(migrationsFolder: string) {
   migrate(db, { migrationsFolder });

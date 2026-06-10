@@ -17,7 +17,8 @@ export async function reverseGeocode(lat: number, lon: number): Promise<GeoResul
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
     const res = await fetch(url, {
-      headers: { "User-Agent": "server-photos/1.0 (personal photo app)" },
+      headers: { "User-Agent": "server-photos/1.0" },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {

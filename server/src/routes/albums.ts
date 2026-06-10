@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { eq, and, inArray, max } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { db } from "../db/client.js";
+import { db, sqlite } from "../db/client.js";
 import { albums, albumPhotos, photos } from "../db/schema.js";
 
 export async function albumRoutes(app: FastifyInstance) {
@@ -91,20 +91,22 @@ export async function albumRoutes(app: FastifyInstance) {
       let sortOrder = (maxRow?.max ?? -1) + 1;
 
       const now = Date.now();
-      for (const photoId of photoIds) {
-        db.insert(albumPhotos)
-          .values({ albumId: req.params.id, photoId, addedAt: now, sortOrder: sortOrder++ })
-          .onConflictDoNothing()
-          .run();
-      }
+      sqlite.transaction(() => {
+        for (const photoId of photoIds) {
+          db.insert(albumPhotos)
+            .values({ albumId: req.params.id, photoId, addedAt: now, sortOrder: sortOrder++ })
+            .onConflictDoNothing()
+            .run();
+        }
 
-      // Auto-set cover if album has none
-      if (!album.coverPhotoId && photoIds[0]) {
-        db.update(albums)
-          .set({ coverPhotoId: photoIds[0], updatedAt: now })
-          .where(eq(albums.id, req.params.id))
-          .run();
-      }
+        // Auto-set cover if album has none
+        if (!album.coverPhotoId && photoIds[0]) {
+          db.update(albums)
+            .set({ coverPhotoId: photoIds[0], updatedAt: now })
+            .where(eq(albums.id, req.params.id))
+            .run();
+        }
+      })();
 
       return { ok: true };
     }

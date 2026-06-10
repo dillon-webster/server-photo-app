@@ -28,7 +28,7 @@ export function UploadButton() {
       setUploads((prev) => [...prev, ...items]);
 
       try {
-        await api.upload(files, (loaded, total) => {
+        const results = await api.upload(files, (loaded, total) => {
           setUploads((prev) =>
             prev.map((item, i) =>
               i >= prev.length - files.length
@@ -37,13 +37,21 @@ export function UploadButton() {
             )
           );
         });
-        setUploads((prev) =>
-          prev.map((item, i) =>
-            i >= prev.length - files.length ? { ...item, done: true, loaded: item.total } : item
-          )
-        );
-        queryClient.invalidateQueries({ queryKey: ["timeline"] });
-        queryClient.invalidateQueries({ queryKey: ["map-photos"] });
+        // Mark each file done or errored based on per-file server result
+        setUploads((prev) => {
+          const offset = prev.length - files.length;
+          return prev.map((item, i) => {
+            if (i < offset) return item;
+            const result = results[i - offset];
+            return result?.ok
+              ? { ...item, done: true, loaded: item.total }
+              : { ...item, error: "Upload failed" };
+          });
+        });
+        if (results.some((r) => r.ok)) {
+          queryClient.invalidateQueries({ queryKey: ["timeline"] });
+          queryClient.invalidateQueries({ queryKey: ["map-photos"] });
+        }
         setTimeout(() => setUploads((prev) => prev.filter((u) => !u.done)), 2500);
       } catch (err) {
         setUploads((prev) =>

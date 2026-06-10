@@ -1,8 +1,9 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useSwipeable } from "react-swipeable";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import type { Photo } from "../types";
-import { originalUrl } from "../api";
+import { originalUrl, api } from "../api";
 
 interface Props {
   photos: Photo[];
@@ -13,6 +14,8 @@ interface Props {
 
 export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const photo = photos[index];
+  const queryClient = useQueryClient();
+  const [deleting, setDeleting] = useState(false);
 
   const prev = useCallback(() => {
     if (index > 0) onNavigate(index - 1);
@@ -22,15 +25,37 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     if (index < photos.length - 1) onNavigate(index + 1);
   }, [index, photos.length, onNavigate]);
 
+  const handleDelete = useCallback(async () => {
+    if (!photo || !confirm(`Delete "${photo.originalName}"? This can't be undone.`)) return;
+    setDeleting(true);
+    try {
+      await api.photos.delete(photo.id);
+      queryClient.invalidateQueries({ queryKey: ["timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["map-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["album"] });
+      // Navigate to next photo, or prev if this was the last, or close
+      if (photos.length === 1) {
+        onClose();
+      } else if (index < photos.length - 1) {
+        onNavigate(index); // same index now points to next photo after re-render
+      } else {
+        onNavigate(index - 1);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }, [photo, index, photos.length, onClose, onNavigate, queryClient]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
+      if (e.key === "Delete" || e.key === "Backspace") handleDelete();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose, prev, next]);
+  }, [onClose, prev, next, handleDelete]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -68,7 +93,16 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         <span className="text-white/50 text-sm">
           {index + 1} / {photos.length}
         </span>
-        <div className="w-9" />
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-white/40 hover:text-red-400 disabled:opacity-30 p-2 rounded-full hover:bg-white/10 transition-colors"
+          title="Delete photo"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
       </div>
 
       {/* Image */}
