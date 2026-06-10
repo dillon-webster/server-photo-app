@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import { api, thumbnailUrl, originalUrl } from "../api";
+import { api, thumbnailUrl } from "../api";
 import { Lightbox } from "../components/Lightbox";
 import type { Photo } from "../types";
 
@@ -53,7 +53,7 @@ export function MapPage() {
           />
           <MarkerClusterGroup
             chunkedLoading
-            iconCreateFunction={(cluster) => {
+            iconCreateFunction={(cluster: { getChildCount: () => number }) => {
               const count = cluster.getChildCount();
               return L.divIcon({
                 html: `<div style="background:#3b82f6;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.4);border:2px solid #fff">${count}</div>`,
@@ -78,6 +78,7 @@ export function MapPage() {
                           size: 0,
                           width: 0,
                           height: 0,
+                          duration: null,
                           dateUploaded: photo.dateTaken ?? Date.now(),
                         };
                         setLightboxPhotos([fullPhoto]);
