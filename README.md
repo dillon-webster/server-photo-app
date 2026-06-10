@@ -1,6 +1,8 @@
 # server-photos
 
-A self-hosted photo app for your home server. Upload photos from a browser and browse them in a timeline, map, and albums UI — like a personal Apple Photos that runs on your own hardware.
+I had a folder of photos sitting on my home server with no good way to browse them. I didn't want just a file server — I wanted something that actually felt like Apple Photos: a timeline, a map, albums. So I built it.
+
+Upload photos from a browser and browse them in a timeline, map, and albums UI, all running on your own hardware.
 
 ## Features
 
