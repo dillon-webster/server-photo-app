@@ -1,0 +1,14 @@
+services:
+  server-photos:
+    build: .
+    container_name: server-photos
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - /mnt/media/photos:/mnt/media/photos
+      - ./data:/app/data
+    environment:
+      - UPLOADS_DIR=/mnt/media/photos
+      - DB_PATH=/app/data/photos.db
+      - PORT=3001

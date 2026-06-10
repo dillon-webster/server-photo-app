@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { dirname, join, resolve } from "path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
@@ -27,7 +27,7 @@ await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 5
 
 // Serve upload files
 await app.register(staticFiles, {
-  root: join(process.cwd(), UPLOADS_DIR),
+  root: resolve(UPLOADS_DIR),
   prefix: "/uploads/",
   decorateReply: false,
 });
