@@ -26,7 +26,7 @@ COPY --from=builder /app/server/dist ./server/dist
 COPY --from=builder /app/client/dist ./client/dist
 COPY package.json ./
 COPY server/package.json ./server/
-COPY server/src/db/migrations ./server/src/db/migrations
+COPY --from=builder /app/server/src/db/migrations ./server/dist/db/migrations
 
 ENV NODE_ENV=production
 EXPOSE 3001
