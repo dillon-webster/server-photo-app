@@ -36,14 +36,14 @@ export function MapPage() {
     );
   }
 
-  const center: [number, number] = [data[0].latitude, data[0].longitude];
+  const bounds = data.map((p) => [p.latitude, p.longitude] as [number, number]);
 
   return (
     <>
       <div className="h-[calc(100vh-49px)]">
         <MapContainer
-          center={center}
-          zoom={4}
+          bounds={bounds}
+          boundsOptions={{ padding: [40, 40] }}
           className="w-full h-full"
           style={{ background: "#1a1a1a" }}
         >
@@ -51,7 +51,17 @@ export function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           />
-          <MarkerClusterGroup chunkedLoading>
+          <MarkerClusterGroup
+            chunkedLoading
+            iconCreateFunction={(cluster) => {
+              const count = cluster.getChildCount();
+              return L.divIcon({
+                html: `<div style="background:#3b82f6;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.4);border:2px solid #fff">${count}</div>`,
+                className: "",
+                iconSize: [36, 36],
+              });
+            }}
+          >
             {data.map((photo) => (
               <Marker key={photo.id} position={[photo.latitude, photo.longitude]}>
                 <Popup>
