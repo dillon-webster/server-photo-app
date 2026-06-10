@@ -4,7 +4,7 @@ services:
     container_name: server-photos
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3002:3001"
     volumes:
       - /mnt/media/photos:/mnt/media/photos
       - ./data:/app/data
