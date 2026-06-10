@@ -6,6 +6,7 @@ export interface Photo {
   size: number;
   width: number;
   height: number;
+  duration: number | null;
   dateTaken: number | null;
   dateUploaded: number;
   latitude: number | null;

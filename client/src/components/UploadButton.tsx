@@ -73,8 +73,8 @@ export function UploadButton() {
     const onDrop = (e: DragEvent) => {
       e.preventDefault();
       setDragging(false);
-      const files = Array.from(e.dataTransfer?.files ?? []).filter((f) =>
-        f.type.startsWith("image/")
+      const files = Array.from(e.dataTransfer?.files ?? []).filter(
+        (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
       );
       handleFiles(files);
     };
@@ -94,7 +94,7 @@ export function UploadButton() {
         ref={inputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept="image/*,video/*"
         className="hidden"
         onChange={(e) => handleFiles(Array.from(e.target.files ?? []))}
       />
@@ -112,14 +112,14 @@ export function UploadButton() {
       {/* Drag overlay */}
       {dragging && (
         <div className="fixed inset-0 z-50 bg-blue-500/20 border-4 border-dashed border-blue-400 flex items-center justify-center pointer-events-none">
-          <div className="text-white text-2xl font-medium">Drop photos to upload</div>
+          <div className="text-white text-2xl font-medium">Drop photos & videos to upload</div>
         </div>
       )}
 
       {/* Upload progress toast */}
       {uploads.length > 0 && (
         <div className="fixed bottom-4 right-4 z-40 bg-neutral-800 rounded-xl shadow-2xl p-4 w-72 space-y-2">
-          <p className="text-white/60 text-xs font-medium mb-2">Uploading {uploads.length} photo{uploads.length !== 1 ? "s" : ""}…</p>
+          <p className="text-white/60 text-xs font-medium mb-2">Uploading {uploads.length} item{uploads.length !== 1 ? "s" : ""}…</p>
           {uploads.map((u, i) => (
             <div key={i}>
               <div className="flex justify-between text-xs text-white/50 mb-1">

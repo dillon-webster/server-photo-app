@@ -1,5 +1,8 @@
 import { createWriteStream, mkdirSync } from "fs";
 import { unlink, stat } from "fs/promises";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { tmpdir } from "os";
 import { extname, join } from "path";
 import { pipeline } from "stream/promises";
 import type { Readable } from "stream";
@@ -11,29 +14,128 @@ import { photos } from "../db/schema.js";
 import { reverseGeocode } from "./geocode.js";
 import type { Photo } from "../db/schema.js";
 
+const execFileAsync = promisify(execFile);
+
 const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./uploads";
 const ORIGINALS_DIR = join(UPLOADS_DIR, "originals");
 const THUMBNAILS_DIR = join(UPLOADS_DIR, "thumbnails");
 
-// Fix 5: whitelisted extensions
-const ALLOWED_EXTS = new Set([".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".gif", ".tiff", ".tif"]);
+const ALLOWED_IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".gif", ".tiff", ".tif"]);
+const ALLOWED_VIDEO_EXTS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]);
 
 export function ensureUploadDirs() {
   mkdirSync(ORIGINALS_DIR, { recursive: true });
   mkdirSync(THUMBNAILS_DIR, { recursive: true });
 }
 
-// Fix 4: removed fileSize parameter — real size is read from disk after write
+async function getVideoMetadata(filePath: string) {
+  const { stdout } = await execFileAsync(
+    "ffprobe",
+    ["-v", "quiet", "-print_format", "json", "-show_streams", "-show_format", filePath],
+    { maxBuffer: 10 * 1024 * 1024 }
+  );
+
+  const data = JSON.parse(stdout);
+  const format = data.format ?? {};
+  const videoStream = (data.streams ?? []).find(
+    (s: Record<string, unknown>) => s.codec_type === "video"
+  );
+
+  const durationSec = parseFloat(format.duration ?? "0");
+  const duration =
+    Number.isFinite(durationSec) && durationSec > 0
+      ? Math.round(durationSec * 1000)
+      : null;
+
+  let width: number = (videoStream?.width as number) ?? 0;
+  let height: number = (videoStream?.height as number) ?? 0;
+  // Swap dimensions for videos rotated 90°/270°
+  const rotationTag = (videoStream?.tags as Record<string, string>)?.rotate;
+  const rotation = rotationTag ? parseInt(rotationTag, 10) : 0;
+  if (Math.abs(rotation) === 90 || Math.abs(rotation) === 270) {
+    [width, height] = [height, width];
+  }
+
+  const tags = (format.tags ?? {}) as Record<string, string>;
+  const creationTime =
+    tags["com.apple.quicktime.creationdate"] ??
+    tags["creation_time"] ??
+    (videoStream?.tags as Record<string, string>)?.creation_time;
+  const rawTs = creationTime ? new Date(creationTime).getTime() : null;
+  const dateTaken = rawTs != null && Number.isFinite(rawTs) ? rawTs : null;
+
+  // iPhone ISO6709 location format: +37.3305-122.0296+050.000/
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  const locationTag =
+    tags["com.apple.quicktime.location.ISO6709"] ?? tags["location"];
+  if (locationTag) {
+    const match = locationTag.match(/([+-]\d+\.?\d*)([+-]\d+\.?\d*)/);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lon = parseFloat(match[2]);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        latitude = lat;
+        longitude = lon;
+      }
+    }
+  }
+
+  return { duration, width, height, dateTaken, latitude, longitude };
+}
+
+async function extractVideoThumbnail(
+  videoPath: string,
+  thumbnailPath: string
+): Promise<void> {
+  const tempJpg = join(tmpdir(), `${uuidv4()}.jpg`);
+  try {
+    try {
+      await execFileAsync("ffmpeg", [
+        "-ss", "1",
+        "-i", videoPath,
+        "-vframes", "1",
+        "-q:v", "2",
+        "-y",
+        tempJpg,
+      ]);
+    } catch {
+      // Video shorter than 1s — extract from beginning
+      await execFileAsync("ffmpeg", [
+        "-i", videoPath,
+        "-vframes", "1",
+        "-q:v", "2",
+        "-y",
+        tempJpg,
+      ]);
+    }
+
+    await sharp(tempJpg)
+      .rotate()
+      .resize(400, 400, { fit: "cover" })
+      .webp({ quality: 80 })
+      .toFile(thumbnailPath);
+  } finally {
+    await unlink(tempJpg).catch(() => {});
+  }
+}
+
 export async function processUpload(
   fileStream: Readable,
   originalName: string,
   mimeType: string
 ): Promise<Photo> {
   const id = uuidv4();
-
-  // Fix 5: whitelist extension
   const rawExt = extname(originalName).toLowerCase();
-  const ext = ALLOWED_EXTS.has(rawExt) ? rawExt : ".jpg";
+  const isVideoFile =
+    ALLOWED_VIDEO_EXTS.has(rawExt) || mimeType.startsWith("video/");
+
+  let ext: string;
+  if (isVideoFile) {
+    ext = ALLOWED_VIDEO_EXTS.has(rawExt) ? rawExt : ".mp4";
+  } else {
+    ext = ALLOWED_IMAGE_EXTS.has(rawExt) ? rawExt : ".jpg";
+  }
 
   const filename = `${id}${ext}`;
   const originalPath = join(ORIGINALS_DIR, filename);
@@ -42,45 +144,55 @@ export async function processUpload(
 
   await pipeline(fileStream, createWriteStream(originalPath));
 
-  // Fix 3: reject truncated uploads (client disconnected mid-upload)
   if ((fileStream as any).truncated) {
     await unlink(originalPath).catch(() => {});
     throw new Error(`Upload truncated: ${originalName}`);
   }
 
-  // Fix 4: get real file size from disk
   const { size: fileSize } = await stat(originalPath);
 
-  // Fix 2: broad try/catch — clean up both files on any downstream failure
   try {
-    let exifData: Awaited<ReturnType<typeof exifr.parse>> = null;
-    try {
-      exifData = await exifr.parse(originalPath, { gps: true });
-    } catch {
-      // EXIF parsing is best-effort
-    }
-
-    // Fix 6: validate EXIF date to prevent NaN
-    const rawTs = exifData?.DateTimeOriginal
-      ? new Date(exifData.DateTimeOriginal).getTime()
-      : null;
-    const dateTaken = rawTs != null && Number.isFinite(rawTs) ? rawTs : null;
-
-    const latitude = exifData?.latitude ?? null;
-    const longitude = exifData?.longitude ?? null;
-
+    let dateTaken: number | null = null;
+    let latitude: number | null = null;
+    let longitude: number | null = null;
     let width = 0;
     let height = 0;
-    const sharpInstance = sharp(originalPath);
-    const meta = await sharpInstance.metadata();
-    width = meta.width ?? 0;
-    height = meta.height ?? 0;
+    let duration: number | null = null;
 
-    await sharpInstance
-      .rotate() // auto-rotate from EXIF orientation
-      .resize(400, 400, { fit: "cover" })
-      .webp({ quality: 80 })
-      .toFile(thumbnailPath);
+    if (isVideoFile) {
+      const meta = await getVideoMetadata(originalPath);
+      dateTaken = meta.dateTaken;
+      latitude = meta.latitude;
+      longitude = meta.longitude;
+      width = meta.width;
+      height = meta.height;
+      duration = meta.duration;
+      await extractVideoThumbnail(originalPath, thumbnailPath);
+    } else {
+      let exifData: Awaited<ReturnType<typeof exifr.parse>> = null;
+      try {
+        exifData = await exifr.parse(originalPath, { gps: true });
+      } catch {
+        // EXIF parsing is best-effort
+      }
+
+      const rawTs = exifData?.DateTimeOriginal
+        ? new Date(exifData.DateTimeOriginal).getTime()
+        : null;
+      dateTaken = rawTs != null && Number.isFinite(rawTs) ? rawTs : null;
+      latitude = exifData?.latitude ?? null;
+      longitude = exifData?.longitude ?? null;
+
+      const sharpInstance = sharp(originalPath);
+      const meta = await sharpInstance.metadata();
+      width = meta.width ?? 0;
+      height = meta.height ?? 0;
+      await sharpInstance
+        .rotate()
+        .resize(400, 400, { fit: "cover" })
+        .webp({ quality: 80 })
+        .toFile(thumbnailPath);
+    }
 
     let city: string | null = null;
     let country: string | null = null;
@@ -98,6 +210,7 @@ export async function processUpload(
       size: fileSize,
       width,
       height,
+      duration,
       dateTaken,
       dateUploaded: Date.now(),
       latitude,

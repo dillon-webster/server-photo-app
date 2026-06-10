@@ -118,13 +118,24 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
           </button>
         )}
 
-        <img
-          key={photo.id}
-          src={originalUrl(photo)}
-          alt={photo.originalName}
-          className="max-w-full max-h-full object-contain select-none"
-          draggable={false}
-        />
+        {photo.mimeType.startsWith("video/") ? (
+          <video
+            key={photo.id}
+            src={originalUrl(photo)}
+            controls
+            autoPlay
+            playsInline
+            className="max-w-full max-h-full select-none"
+          />
+        ) : (
+          <img
+            key={photo.id}
+            src={originalUrl(photo)}
+            alt={photo.originalName}
+            className="max-w-full max-h-full object-contain select-none"
+            draggable={false}
+          />
+        )}
 
         {index < photos.length - 1 && (
           <button
