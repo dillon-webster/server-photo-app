@@ -1,11 +1,45 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { api, thumbnailUrl } from "../api";
 import { Lightbox } from "../components/Lightbox";
-import type { Photo } from "../types";
+import type { Photo, MapPhoto } from "../types";
+
+function PopupImage({ photo, onOpen }: { photo: MapPhoto; onOpen: (p: Photo) => void }) {
+  const ref = useRef<HTMLImageElement>(null);
+  const onOpenRef = useRef(onOpen);
+  onOpenRef.current = onOpen;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handler = () => {
+      onOpenRef.current({
+        ...photo,
+        originalName: photo.filename,
+        mimeType: "image/jpeg",
+        size: 0,
+        width: 0,
+        height: 0,
+        duration: null,
+        dateUploaded: photo.dateTaken ?? Date.now(),
+      });
+    };
+    el.addEventListener("click", handler);
+    return () => el.removeEventListener("click", handler);
+  }, [photo]);
+
+  return (
+    <img
+      ref={ref}
+      src={thumbnailUrl(photo)}
+      alt=""
+      className="w-full h-24 object-cover rounded cursor-pointer"
+    />
+  );
+}
 
 // Fix default marker icons (Leaflet + bundler issue)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -23,6 +57,11 @@ export function MapPage() {
 
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
   const [lightboxPhotos, setLightboxPhotos] = useState<Photo[]>([]);
+
+  const handleOpen = useCallback((p: Photo) => {
+    setLightboxPhotos([p]);
+    setLightboxPhoto(p);
+  }, []);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64 text-white/30">Loading…</div>;
@@ -66,25 +105,7 @@ export function MapPage() {
               <Marker key={photo.id} position={[photo.latitude, photo.longitude]}>
                 <Popup>
                   <div className="w-32">
-                    <img
-                      src={thumbnailUrl(photo)}
-                      alt=""
-                      className="w-full h-24 object-cover rounded cursor-pointer"
-                      onMouseDown={() => {
-                        const fullPhoto: Photo = {
-                          ...photo,
-                          originalName: photo.filename,
-                          mimeType: "image/jpeg",
-                          size: 0,
-                          width: 0,
-                          height: 0,
-                          duration: null,
-                          dateUploaded: photo.dateTaken ?? Date.now(),
-                        };
-                        setLightboxPhotos([fullPhoto]);
-                        setLightboxPhoto(fullPhoto);
-                      }}
-                    />
+                    <PopupImage photo={photo} onOpen={handleOpen} />
                     {(photo.city || photo.country) && (
                       <p className="text-xs text-gray-600 mt-1 truncate">
                         {[photo.city, photo.country].filter(Boolean).join(", ")}
