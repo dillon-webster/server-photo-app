@@ -176,9 +176,8 @@ export async function processUpload(
         // EXIF parsing is best-effort
       }
 
-      const rawTs = exifData?.DateTimeOriginal
-        ? new Date(exifData.DateTimeOriginal).getTime()
-        : null;
+      const rawDate = exifData?.DateTimeOriginal ?? exifData?.CreateDate;
+      const rawTs = rawDate ? new Date(rawDate).getTime() : null;
       dateTaken = rawTs != null && Number.isFinite(rawTs) ? rawTs : null;
       latitude = exifData?.latitude ?? null;
       longitude = exifData?.longitude ?? null;
