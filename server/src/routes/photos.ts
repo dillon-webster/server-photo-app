@@ -4,6 +4,7 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { db } from "../db/client.js";
 import { albums, photos } from "../db/schema.js";
+import { forwardGeocode } from "../services/geocode.js";
 
 interface PhotoPatch {
   dateTaken?: string | null;
@@ -97,6 +98,21 @@ export async function photoRoutes(app: FastifyInstance) {
     if ("country" in body) patch.country = body.country ?? null;
     if ("latitude" in body) patch.latitude = body.latitude ?? null;
     if ("longitude" in body) patch.longitude = body.longitude ?? null;
+
+    // Auto-geocode when city/country are set but no explicit lat/lon provided
+    const hasExplicitCoords = "latitude" in body || "longitude" in body;
+    if (!hasExplicitCoords) {
+      const cityVal = patch.city ?? photo.city;
+      const countryVal = patch.country ?? photo.country;
+      const query = [cityVal, countryVal].filter(Boolean).join(", ");
+      if (query && photo.latitude == null && photo.longitude == null) {
+        const coords = await forwardGeocode(query);
+        if (coords) {
+          patch.latitude = coords.latitude;
+          patch.longitude = coords.longitude;
+        }
+      }
+    }
 
     db.update(photos).set(patch).where(eq(photos.id, req.params.id)).run();
     return db.select().from(photos).where(eq(photos.id, req.params.id)).get();

@@ -3,6 +3,11 @@ interface GeoResult {
   country: string | null;
 }
 
+interface LatLon {
+  latitude: number;
+  longitude: number;
+}
+
 // Rounded to ~1km precision to maximize cache hits
 const cache = new Map<string, GeoResult>();
 
@@ -21,6 +26,19 @@ async function throttledFetch(url: string): Promise<Response> {
     headers: { "User-Agent": "server-photos/1.0" },
     signal: AbortSignal.timeout(8000),
   });
+}
+
+export async function forwardGeocode(query: string): Promise<LatLon | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+    const res = await throttledFetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { lat?: string; lon?: string }[];
+    if (!data[0]?.lat || !data[0]?.lon) return null;
+    return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
 }
 
 export async function reverseGeocode(lat: number, lon: number): Promise<GeoResult> {
