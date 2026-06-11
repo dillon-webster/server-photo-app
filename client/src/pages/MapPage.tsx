@@ -5,7 +5,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { api, thumbnailUrl } from "../api";
 import { Lightbox } from "../components/Lightbox";
-import type { Photo, MapPhoto } from "../types";
+import type { Photo } from "../types";
 
 // Fix default marker icons (Leaflet + bundler issue)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
