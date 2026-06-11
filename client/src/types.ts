@@ -38,12 +38,7 @@ export interface TimelineYear {
   months: TimelineMonth[];
 }
 
-export interface MapPhoto {
-  id: string;
-  filename: string;
+export interface MapPhoto extends Photo {
   latitude: number;
   longitude: number;
-  dateTaken: number | null;
-  city: string | null;
-  country: string | null;
 }

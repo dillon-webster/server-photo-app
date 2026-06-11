@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import type { Photo } from "../types";
 import { originalUrl, api } from "../api";
+import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 
 function toDatetimeLocal(ts: number) {
   return format(new Date(ts), "yyyy-MM-dd'T'HH:mm");
@@ -115,7 +116,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 flex flex-col"
+      className={`fixed inset-0 ${LIGHTBOX_LAYER_CLASS} bg-black/95 flex flex-col`}
       {...swipeHandlers}
     >
       {/* Header */}

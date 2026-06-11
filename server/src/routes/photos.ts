@@ -62,15 +62,7 @@ export async function photoRoutes(app: FastifyInstance) {
   // Map: only photos with GPS
   app.get("/api/photos/map", async () => {
     return db
-      .select({
-        id: photos.id,
-        filename: photos.filename,
-        latitude: photos.latitude,
-        longitude: photos.longitude,
-        dateTaken: photos.dateTaken,
-        city: photos.city,
-        country: photos.country,
-      })
+      .select()
       .from(photos)
       .where(and(isNotNull(photos.latitude), isNotNull(photos.longitude)))
       .all();

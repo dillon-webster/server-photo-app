@@ -1,11 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { api, thumbnailUrl } from "../api";
 import { Lightbox } from "../components/Lightbox";
-import type { Photo } from "../types";
+import { createOpenClickRef } from "./mapPopupClick";
+import { mapPhotosForLightbox } from "./mapPhotos";
+import type { MapPhoto } from "../types";
 
 // Fix default marker icons (Leaflet + bundler issue)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -15,19 +17,46 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+function MapMarker({ photo, onOpen }: { photo: MapPhoto; onOpen: () => void }) {
+  const previewRef = useMemo(() => createOpenClickRef(onOpen), [onOpen]);
+
+  return (
+    <Marker position={[photo.latitude, photo.longitude]}>
+      <Popup>
+        <button
+          ref={previewRef}
+          type="button"
+          aria-label={`Open ${photo.filename}`}
+          className="block w-32 cursor-pointer border-0 bg-transparent p-0 text-left"
+        >
+          <img
+            src={thumbnailUrl(photo)}
+            alt=""
+            className="w-full h-24 object-cover rounded"
+          />
+          {(photo.city || photo.country) && (
+            <p className="text-xs text-gray-600 mt-1 truncate">
+              {[photo.city, photo.country].filter(Boolean).join(", ")}
+            </p>
+          )}
+          <p className="text-[10px] text-blue-600 mt-1">Click to open</p>
+        </button>
+      </Popup>
+    </Marker>
+  );
+}
+
 export function MapPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["map-photos"],
     queryFn: api.photos.map,
   });
 
-  const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
-  const [lightboxPhotos, setLightboxPhotos] = useState<Photo[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const handleOpen = useCallback((p: Photo) => {
-    setLightboxPhotos([p]);
-    setLightboxPhoto(p);
-  }, []);
+  const photos = useMemo(() => mapPhotosForLightbox(data ?? []), [data]);
+
+  const handleOpen = useCallback((index: number) => setLightboxIndex(index), []);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64 text-white/30">Loading…</div>;
@@ -67,49 +96,19 @@ export function MapPage() {
               });
             }}
           >
-            {data.map((photo) => (
-              <Marker
-                key={photo.id}
-                position={[photo.latitude, photo.longitude]}
-                eventHandlers={{
-                  click: () => handleOpen({
-                    ...photo,
-                    originalName: photo.filename,
-                    mimeType: "image/jpeg",
-                    size: 0,
-                    width: 0,
-                    height: 0,
-                    duration: null,
-                    dateUploaded: photo.dateTaken ?? Date.now(),
-                  }),
-                }}
-              >
-                <Popup>
-                  <div className="w-32">
-                    <img
-                      src={thumbnailUrl(photo)}
-                      alt=""
-                      className="w-full h-24 object-cover rounded"
-                    />
-                    {(photo.city || photo.country) && (
-                      <p className="text-xs text-gray-600 mt-1 truncate">
-                        {[photo.city, photo.country].filter(Boolean).join(", ")}
-                      </p>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
+            {data.map((photo, i) => (
+              <MapMarker key={photo.id} photo={photo} onOpen={() => handleOpen(i)} />
             ))}
           </MarkerClusterGroup>
         </MapContainer>
       </div>
 
-      {lightboxPhoto && (
+      {lightboxIndex !== null && (
         <Lightbox
-          photos={lightboxPhotos}
-          index={0}
-          onClose={() => setLightboxPhoto(null)}
-          onNavigate={() => {}}
+          photos={photos}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
         />
       )}
     </>
