@@ -12,6 +12,7 @@ interface PhotoPatch {
   country?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  locationSearch?: string | null;
 }
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./uploads";
@@ -99,13 +100,18 @@ export async function photoRoutes(app: FastifyInstance) {
     if ("latitude" in body) patch.latitude = body.latitude ?? null;
     if ("longitude" in body) patch.longitude = body.longitude ?? null;
 
-    // Auto-geocode when city/country are set but no explicit lat/lon provided
+    // Auto-geocode: locationSearch takes priority; fall back to city+country for photos with no coords
     const hasExplicitCoords = "latitude" in body || "longitude" in body;
     if (!hasExplicitCoords) {
-      const cityVal = patch.city ?? photo.city;
-      const countryVal = patch.country ?? photo.country;
-      const query = [cityVal, countryVal].filter(Boolean).join(", ");
-      if (query && photo.latitude == null && photo.longitude == null) {
+      const searchQuery = body.locationSearch?.trim();
+      const fallbackQuery = (() => {
+        if (photo.latitude != null && photo.longitude != null) return null; // already has coords
+        const cityVal = patch.city ?? photo.city;
+        const countryVal = patch.country ?? photo.country;
+        return [cityVal, countryVal].filter(Boolean).join(", ") || null;
+      })();
+      const query = searchQuery || fallbackQuery;
+      if (query) {
         const coords = await forwardGeocode(query);
         if (coords) {
           patch.latitude = coords.latitude;

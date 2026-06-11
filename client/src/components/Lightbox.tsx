@@ -25,6 +25,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const [editDate, setEditDate] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editCountry, setEditCountry] = useState("");
+  const [editLocationSearch, setEditLocationSearch] = useState("");
 
   const prev = useCallback(() => {
     if (index > 0) { setEditing(false); onNavigate(index - 1); }
@@ -38,6 +39,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     setEditDate(photo.dateTaken ? toDatetimeLocal(photo.dateTaken) : "");
     setEditCity(photo.city ?? "");
     setEditCountry(photo.country ?? "");
+    setEditLocationSearch("");
     setEditing(true);
   }, [photo]);
 
@@ -48,6 +50,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         dateTaken: editDate || null,
         city: editCity.trim() || null,
         country: editCountry.trim() || null,
+        locationSearch: editLocationSearch.trim() || null,
       });
       queryClient.invalidateQueries({ queryKey: ["timeline"] });
       queryClient.invalidateQueries({ queryKey: ["map-photos"] });
@@ -81,6 +84,8 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
@@ -191,6 +196,13 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
               value={editDate}
               onChange={e => setEditDate(e.target.value)}
               className="bg-white/10 text-white text-sm rounded px-2 py-1 w-full border border-white/20"
+            />
+            <input
+              type="text"
+              placeholder="Search location (e.g. Delta Center, Salt Lake City)"
+              value={editLocationSearch}
+              onChange={e => setEditLocationSearch(e.target.value)}
+              className="bg-white/10 text-white text-sm rounded px-2 py-1 w-full border border-white/20 placeholder:text-white/30"
             />
             <div className="flex gap-2 w-full">
               <input
