@@ -5,6 +5,14 @@ import { join } from "path";
 import { db } from "../db/client.js";
 import { albums, photos } from "../db/schema.js";
 
+interface PhotoPatch {
+  dateTaken?: string | null;
+  city?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
 const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./uploads";
 
 const MONTHS = [
@@ -71,6 +79,27 @@ export async function photoRoutes(app: FastifyInstance) {
     const photo = db.select().from(photos).where(eq(photos.id, req.params.id)).get();
     if (!photo) return reply.status(404).send({ error: "Not found" });
     return photo;
+  });
+
+  // Update photo metadata (date, location)
+  app.patch<{ Params: { id: string }; Body: PhotoPatch }>("/api/photos/:id", async (req, reply) => {
+    const photo = db.select().from(photos).where(eq(photos.id, req.params.id)).get();
+    if (!photo) return reply.status(404).send({ error: "Not found" });
+
+    const body = req.body;
+    const patch: Partial<typeof photos.$inferInsert> = {};
+
+    if ("dateTaken" in body) {
+      const ts = body.dateTaken ? new Date(body.dateTaken).getTime() : null;
+      patch.dateTaken = ts != null && Number.isFinite(ts) ? ts : null;
+    }
+    if ("city" in body) patch.city = body.city ?? null;
+    if ("country" in body) patch.country = body.country ?? null;
+    if ("latitude" in body) patch.latitude = body.latitude ?? null;
+    if ("longitude" in body) patch.longitude = body.longitude ?? null;
+
+    db.update(photos).set(patch).where(eq(photos.id, req.params.id)).run();
+    return db.select().from(photos).where(eq(photos.id, req.params.id)).get();
   });
 
   // Delete photo

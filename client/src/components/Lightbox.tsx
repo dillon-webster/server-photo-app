@@ -5,6 +5,10 @@ import { format } from "date-fns";
 import type { Photo } from "../types";
 import { originalUrl, api } from "../api";
 
+function toDatetimeLocal(ts: number) {
+  return format(new Date(ts), "yyyy-MM-dd'T'HH:mm");
+}
+
 interface Props {
   photos: Photo[];
   index: number;
@@ -16,14 +20,43 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const photo = photos[index];
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editCountry, setEditCountry] = useState("");
 
   const prev = useCallback(() => {
-    if (index > 0) onNavigate(index - 1);
+    if (index > 0) { setEditing(false); onNavigate(index - 1); }
   }, [index, onNavigate]);
 
   const next = useCallback(() => {
-    if (index < photos.length - 1) onNavigate(index + 1);
+    if (index < photos.length - 1) { setEditing(false); onNavigate(index + 1); }
   }, [index, photos.length, onNavigate]);
+
+  const startEditing = useCallback(() => {
+    setEditDate(photo.dateTaken ? toDatetimeLocal(photo.dateTaken) : "");
+    setEditCity(photo.city ?? "");
+    setEditCountry(photo.country ?? "");
+    setEditing(true);
+  }, [photo]);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    try {
+      await api.photos.update(photo.id, {
+        dateTaken: editDate || null,
+        city: editCity.trim() || null,
+        country: editCountry.trim() || null,
+      });
+      queryClient.invalidateQueries({ queryKey: ["timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["map-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["album"] });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }, [photo.id, editDate, editCity, editCountry, queryClient]);
 
   const handleDelete = useCallback(async () => {
     if (!photo || !confirm(`Delete "${photo.originalName}"? This can't be undone.`)) return;
@@ -151,9 +184,64 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
 
       {/* Footer */}
       <div className="px-4 py-3 shrink-0 text-center">
-        <p className="text-white/60 text-sm">{dateStr}</p>
-        {location && <p className="text-white/40 text-xs mt-1">{location}</p>}
-        <p className="text-white/30 text-xs mt-1 truncate max-w-xs mx-auto">{photo.originalName}</p>
+        {editing ? (
+          <div className="flex flex-col items-center gap-2 max-w-xs mx-auto">
+            <input
+              type="datetime-local"
+              value={editDate}
+              onChange={e => setEditDate(e.target.value)}
+              className="bg-white/10 text-white text-sm rounded px-2 py-1 w-full border border-white/20"
+            />
+            <div className="flex gap-2 w-full">
+              <input
+                type="text"
+                placeholder="City"
+                value={editCity}
+                onChange={e => setEditCity(e.target.value)}
+                className="bg-white/10 text-white text-sm rounded px-2 py-1 flex-1 border border-white/20 placeholder:text-white/30"
+              />
+              <input
+                type="text"
+                placeholder="Country"
+                value={editCountry}
+                onChange={e => setEditCountry(e.target.value)}
+                className="bg-white/10 text-white text-sm rounded px-2 py-1 flex-1 border border-white/20 placeholder:text-white/30"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="text-white text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="text-white/60 text-xs px-3 py-1 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-center gap-1.5">
+              <p className="text-white/60 text-sm">{dateStr}</p>
+              <button
+                onClick={startEditing}
+                className="text-white/30 hover:text-white/70 transition-colors"
+                title="Edit date & location"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+            {location && <p className="text-white/40 text-xs mt-1">{location}</p>}
+            <p className="text-white/30 text-xs mt-1 truncate max-w-xs mx-auto">{photo.originalName}</p>
+          </>
+        )}
       </div>
     </div>
   );

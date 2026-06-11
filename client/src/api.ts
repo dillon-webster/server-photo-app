@@ -14,6 +14,12 @@ export const api = {
     timeline: () => request<TimelineYear[]>("/api/photos/timeline"),
     map: () => request<MapPhoto[]>("/api/photos/map"),
     get: (id: string) => request<Photo>(`/api/photos/${id}`),
+    update: (id: string, data: { dateTaken?: string | null; city?: string | null; country?: string | null; latitude?: number | null; longitude?: number | null }) =>
+      request<Photo>(`/api/photos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }),
     delete: (id: string) =>
       request<{ ok: boolean }>(`/api/photos/${id}`, { method: "DELETE" }),
   },
