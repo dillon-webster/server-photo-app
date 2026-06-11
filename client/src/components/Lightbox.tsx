@@ -59,7 +59,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [photo.id, editDate, editCity, editCountry, queryClient]);
+  }, [photo.id, editDate, editCity, editCountry, editLocationSearch, queryClient]);
 
   const handleDelete = useCallback(async () => {
     if (!photo || !confirm(`Delete "${photo.originalName}"? This can't be undone.`)) return;
