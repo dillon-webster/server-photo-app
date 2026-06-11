@@ -70,7 +70,7 @@ export function MapPage() {
                       src={thumbnailUrl(photo)}
                       alt=""
                       className="w-full h-24 object-cover rounded cursor-pointer"
-                      onClick={() => {
+                      onMouseDown={() => {
                         const fullPhoto: Photo = {
                           ...photo,
                           originalName: photo.filename,
