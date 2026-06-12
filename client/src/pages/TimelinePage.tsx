@@ -1,7 +1,10 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { PhotoGrid } from "../components/PhotoGrid";
+import { TimelineScrubber, type ScrubberYear } from "../components/TimelineScrubber";
+
+const NAVBAR_H = 56;
 
 export function TimelinePage() {
   const { data, isLoading } = useQuery({
@@ -10,6 +13,58 @@ export function TimelinePage() {
   });
 
   const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const activeSet = useRef(new Set<string>());
+  const [activeYear, setActiveYear] = useState<string | null>(null);
+
+  const yearList = useMemo(() => data?.map((y) => y.year) ?? [], [data]);
+
+  const scrubberYears = useMemo(
+    (): ScrubberYear[] =>
+      yearList.map((year) => ({
+        year,
+        scrollTo: () => {
+          const el = yearRefs.current[year];
+          if (!el) return;
+          const top = el.getBoundingClientRect().top + window.scrollY - NAVBAR_H;
+          window.scrollTo({ top, behavior: "instant" });
+        },
+      })),
+    [yearList]
+  );
+
+  useEffect(() => {
+    if (!yearList.length) return;
+
+    const pick = () => {
+      for (const year of yearList) {
+        if (activeSet.current.has(year)) {
+          setActiveYear(year);
+          return;
+        }
+      }
+    };
+
+    const observers: IntersectionObserver[] = [];
+    for (const year of yearList) {
+      const el = yearRefs.current[year];
+      if (!el) continue;
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) activeSet.current.add(year);
+          else activeSet.current.delete(year);
+          pick();
+        },
+        { rootMargin: "0px 0px -55% 0px", threshold: 0 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    }
+
+    return () => {
+      observers.forEach((o) => o.disconnect());
+      activeSet.current.clear();
+    };
+  }, [yearList]);
 
   if (isLoading) {
     return (
@@ -30,46 +85,28 @@ export function TimelinePage() {
     );
   }
 
-  const years = data.map((y) => y.year);
-
   return (
-    <div className="flex min-h-screen">
-      {/* Year sidebar */}
-      <aside className="hidden lg:flex flex-col gap-1 pt-6 px-3 w-16 shrink-0 sticky top-14 self-start max-h-[calc(100vh-56px)] overflow-y-auto">
-        {years.map((year) => (
-          <button
-            key={year}
-            onClick={() =>
-              yearRefs.current[year]?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
-            className="text-white/30 hover:text-white text-xs font-medium text-center py-1 rounded transition-colors hover:bg-white/5"
-          >
-            {year}
-          </button>
-        ))}
-      </aside>
+    <div className="min-h-screen pb-12 pr-8">
+      {data.map((yearGroup) => (
+        <div
+          key={yearGroup.year}
+          ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
+        >
+          <h2 className="text-2xl font-semibold text-white/80 px-4 pt-8 pb-2 sticky top-14 bg-neutral-950/95 backdrop-blur-sm z-10">
+            {yearGroup.year}
+          </h2>
+          {yearGroup.months.map((monthGroup) => (
+            <div key={monthGroup.month}>
+              <h3 className="text-sm font-medium text-white/40 px-4 py-2">
+                {monthGroup.month}
+              </h3>
+              <PhotoGrid photos={monthGroup.photos} />
+            </div>
+          ))}
+        </div>
+      ))}
 
-      {/* Main content */}
-      <div className="flex-1 min-w-0 pb-12">
-        {data.map((yearGroup) => (
-          <div
-            key={yearGroup.year}
-            ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
-          >
-            <h2 className="text-2xl font-semibold text-white/80 px-4 pt-8 pb-2 sticky top-14 bg-neutral-950/95 backdrop-blur-sm z-10">
-              {yearGroup.year}
-            </h2>
-            {yearGroup.months.map((monthGroup) => (
-              <div key={monthGroup.month}>
-                <h3 className="text-sm font-medium text-white/40 px-4 py-2">
-                  {monthGroup.month}
-                </h3>
-                <PhotoGrid photos={monthGroup.photos} />
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
+      <TimelineScrubber years={scrubberYears} activeYear={activeYear} />
     </div>
   );
 }
