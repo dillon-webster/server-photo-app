@@ -1,4 +1,4 @@
-import { originalUrl, playbackUrl } from "../api";
+import { playbackUrl } from "../api";
 
 interface VideoPhoto {
   id: string;
@@ -9,6 +9,5 @@ interface VideoPhoto {
 export function videoSources(photo: VideoPhoto) {
   return [
     { src: playbackUrl(photo), type: "video/mp4" },
-    { src: originalUrl(photo), type: photo.mimeType },
   ];
 }
