@@ -3,35 +3,37 @@ type UploadDateFallbackResult =
   | { valid: false };
 
 export function parseUploadDateFallback(
-  rawYear: unknown,
-  rawMonth: unknown,
+  rawDate: unknown,
 ): UploadDateFallbackResult {
-  const hasYear = rawYear !== undefined && rawYear !== null && rawYear !== "";
-  const hasMonth = rawMonth !== undefined && rawMonth !== null && rawMonth !== "";
-
-  if (!hasYear && !hasMonth) {
+  if (rawDate === undefined || rawDate === null || rawDate === "") {
     return { valid: true, value: null };
   }
-  if (!hasYear || !hasMonth) {
+
+  if (typeof rawDate !== "string") {
     return { valid: false };
   }
 
-  const year = Number(rawYear);
-  const month = Number(rawMonth);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(rawDate);
+  if (!match) {
+    return { valid: false };
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day, 12);
   if (
-    !Number.isInteger(year) ||
     year < 1000 ||
-    year > 9999 ||
-    !Number.isInteger(month) ||
-    month < 1 ||
-    month > 12
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
   ) {
     return { valid: false };
   }
 
   return {
     valid: true,
-    value: new Date(year, month - 1, 1, 12).getTime(),
+    value: date.getTime(),
   };
 }
 

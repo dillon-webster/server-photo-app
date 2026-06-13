@@ -7,24 +7,19 @@ export async function uploadRoutes(app: FastifyInstance) {
   app.post("/api/upload", async (req, reply) => {
     const parts = req.parts();
     const results = [];
-    let rawFallbackYear: unknown;
-    let rawFallbackMonth: unknown;
+    let rawFallbackDate: unknown;
     let fallbackDate: number | null | undefined;
 
     for await (const part of parts) {
       if (part.type === "field") {
-        if (part.fieldname === "fallbackYear") rawFallbackYear = part.value;
-        if (part.fieldname === "fallbackMonth") rawFallbackMonth = part.value;
+        if (part.fieldname === "fallbackDate") rawFallbackDate = part.value;
         continue;
       }
 
       if (fallbackDate === undefined) {
-        const parsedFallback = parseUploadDateFallback(
-          rawFallbackYear,
-          rawFallbackMonth,
-        );
+        const parsedFallback = parseUploadDateFallback(rawFallbackDate);
         if (!parsedFallback.valid) {
-          return reply.status(400).send({ error: "Invalid upload year or month" });
+          return reply.status(400).send({ error: "Invalid upload date" });
         }
         fallbackDate = parsedFallback.value;
       }

@@ -3,20 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { uploadResultError } from "../uploadResult";
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+function localDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 interface UploadItem {
   name: string;
@@ -27,17 +19,15 @@ interface UploadItem {
 }
 
 export function UploadButton() {
-  const now = new Date();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [fallbackYear, setFallbackYear] = useState(now.getFullYear());
-  const [fallbackMonth, setFallbackMonth] = useState(now.getMonth() + 1);
+  const [fallbackDate, setFallbackDate] = useState(() => localDateInputValue(new Date()));
   const queryClient = useQueryClient();
 
   const uploadFiles = useCallback(
-    async (files: File[], year: number, month: number) => {
+    async (files: File[], date: string) => {
       if (!files.length) return;
       const items: UploadItem[] = files.map((f) => ({
         name: f.name,
@@ -48,7 +38,7 @@ export function UploadButton() {
       setUploads((prev) => [...prev, ...items]);
 
       try {
-        const results = await api.upload(files, { year, month }, (loaded, total) => {
+        const results = await api.upload(files, { date }, (loaded, total) => {
           setUploads((prev) =>
             prev.map((item, i) =>
               i >= prev.length - files.length
@@ -92,22 +82,14 @@ export function UploadButton() {
   }, []);
 
   const confirmUpload = useCallback(() => {
-    if (
-      !pendingFiles.length ||
-      !Number.isInteger(fallbackYear) ||
-      fallbackYear < 1000 ||
-      fallbackYear > 9999 ||
-      !Number.isInteger(fallbackMonth) ||
-      fallbackMonth < 1 ||
-      fallbackMonth > 12
-    ) {
+    if (!pendingFiles.length || !fallbackDate) {
       return;
     }
 
     const files = pendingFiles;
     setPendingFiles([]);
-    void uploadFiles(files, fallbackYear, fallbackMonth);
-  }, [pendingFiles, fallbackYear, fallbackMonth, uploadFiles]);
+    void uploadFiles(files, fallbackDate);
+  }, [pendingFiles, fallbackDate, uploadFiles]);
 
   // Global drag-drop
   useEffect(() => {
@@ -160,34 +142,17 @@ export function UploadButton() {
           <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl">
             <h2 className="text-white text-lg font-medium">When were these taken?</h2>
             <p className="mt-1 text-sm text-white/50">
-              This month is only used for photos missing an Apple date.
+              This date is only used for items missing an Apple date.
             </p>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-5">
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs uppercase tracking-wide text-white/40">Month</span>
-                <select
-                  value={fallbackMonth}
-                  onChange={(e) => setFallbackMonth(Number(e.target.value))}
-                  className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
-                >
-                  {MONTHS.map((month, index) => (
-                    <option key={month} value={index + 1} className="bg-neutral-900">
-                      {month}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs uppercase tracking-wide text-white/40">Year</span>
+                <span className="text-xs uppercase tracking-wide text-white/40">Date</span>
                 <input
-                  type="number"
-                  min={1000}
-                  max={9999}
+                  type="date"
                   required
-                  value={fallbackYear}
-                  onChange={(e) => setFallbackYear(Number(e.target.value))}
+                  value={fallbackDate}
+                  onChange={(e) => setFallbackDate(e.target.value)}
                   className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
                 />
               </label>
@@ -208,11 +173,7 @@ export function UploadButton() {
               <button
                 type="button"
                 onClick={confirmUpload}
-                disabled={
-                  !Number.isInteger(fallbackYear) ||
-                  fallbackYear < 1000 ||
-                  fallbackYear > 9999
-                }
+                disabled={!fallbackDate}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40"
               >
                 Upload

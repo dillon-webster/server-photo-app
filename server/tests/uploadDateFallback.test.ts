@@ -5,8 +5,8 @@ import {
   resolveUploadDate,
 } from "../src/services/uploadDateFallback.ts";
 
-test("creates a fallback timestamp on the first day of the selected month", () => {
-  const result = parseUploadDateFallback("2015", "10");
+test("creates a fallback timestamp on the selected date", () => {
+  const result = parseUploadDateFallback("2015-10-23");
 
   assert.equal(result.valid, true);
   if (!result.valid || result.value == null) return;
@@ -14,28 +14,40 @@ test("creates a fallback timestamp on the first day of the selected month", () =
   const date = new Date(result.value);
   assert.equal(date.getFullYear(), 2015);
   assert.equal(date.getMonth(), 9);
-  assert.equal(date.getDate(), 1);
+  assert.equal(date.getDate(), 23);
   assert.equal(date.getHours(), 12);
 });
 
-test("allows an upload without fallback fields", () => {
-  assert.deepEqual(parseUploadDateFallback(undefined, undefined), {
+test("accepts a real leap day", () => {
+  const result = parseUploadDateFallback("2024-02-29");
+
+  assert.equal(result.valid, true);
+  if (!result.valid || result.value == null) return;
+
+  const date = new Date(result.value);
+  assert.equal(date.getFullYear(), 2024);
+  assert.equal(date.getMonth(), 1);
+  assert.equal(date.getDate(), 29);
+});
+
+test("allows an upload without a fallback date", () => {
+  assert.deepEqual(parseUploadDateFallback(undefined), {
     valid: true,
     value: null,
   });
 });
 
-test("rejects incomplete fallback fields", () => {
-  assert.deepEqual(parseUploadDateFallback("2015", undefined), {
+test("rejects malformed fallback dates", () => {
+  assert.deepEqual(parseUploadDateFallback("10/23/2015"), {
     valid: false,
   });
 });
 
-test("rejects out-of-range fallback fields", () => {
-  assert.deepEqual(parseUploadDateFallback("2015", "13"), {
+test("rejects impossible fallback dates", () => {
+  assert.deepEqual(parseUploadDateFallback("2023-02-29"), {
     valid: false,
   });
-  assert.deepEqual(parseUploadDateFallback("999", "10"), {
+  assert.deepEqual(parseUploadDateFallback("2015-13-01"), {
     valid: false,
   });
 });

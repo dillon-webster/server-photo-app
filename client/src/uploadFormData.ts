@@ -1,6 +1,5 @@
 export interface UploadDateFallback {
-  year: number;
-  month: number;
+  date: string;
 }
 
 export function buildUploadFormData(
@@ -8,8 +7,7 @@ export function buildUploadFormData(
   fallback: UploadDateFallback,
 ) {
   const formData = new FormData();
-  formData.append("fallbackYear", String(fallback.year));
-  formData.append("fallbackMonth", String(fallback.month));
+  formData.append("fallbackDate", fallback.date);
   files.forEach((file) => formData.append("files", file));
   return formData;
 }
