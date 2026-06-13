@@ -6,9 +6,6 @@ import type { Photo } from "../types";
 import { originalUrl, api } from "../api";
 import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 
-function toDatetimeLocal(ts: number) {
-  return format(new Date(ts), "yyyy-MM-dd'T'HH:mm");
-}
 
 interface Props {
   photos: Photo[];
@@ -35,7 +32,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   }, [index, photos.length, onNavigate]);
 
   const startEditing = useCallback(() => {
-    setEditDate(photo.dateTaken ? toDatetimeLocal(photo.dateTaken) : "");
+    setEditDate(photo.dateTaken ? format(new Date(photo.dateTaken), "MMMM d, yyyy") : "");
     setEditLocationSearch([photo.city, photo.country].filter(Boolean).join(", "));
     setEditing(true);
   }, [photo]);
@@ -189,10 +186,11 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
             <div className="flex flex-col gap-1">
               <span className="text-white/30 text-xs uppercase tracking-wide">Date</span>
               <input
-                type="datetime-local"
+                type="text"
+                placeholder="e.g. Oct 29, 2015"
                 value={editDate}
                 onChange={e => setEditDate(e.target.value)}
-                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none"
+                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/25"
               />
             </div>
             <div className="flex flex-col gap-1">
