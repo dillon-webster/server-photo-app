@@ -29,7 +29,6 @@ await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 5
 await app.register(staticFiles, {
   root: resolve(UPLOADS_DIR),
   prefix: "/uploads/",
-  decorateReply: false,
 });
 
 // Serve built client in production
@@ -38,7 +37,6 @@ await app.register(staticFiles, {
   root: CLIENT_DIST,
   prefix: "/",
   decorateReply: false,
-  wildcard: false,
 });
 
 await app.register(uploadRoutes);

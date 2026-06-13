@@ -8,6 +8,7 @@ import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 import { MapPicker } from "./MapPicker";
 import { dateInputToTimestamp, timestampToDateInput } from "./photoDate";
 import { savePhotoLocation } from "./photoLocation";
+import { VideoPlayer } from "./VideoPlayer";
 
 
 interface Props {
@@ -168,14 +169,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         )}
 
         {photo.mimeType.startsWith("video/") ? (
-          <video
-            key={photo.id}
-            src={originalUrl(photo)}
-            controls
-            autoPlay
-            playsInline
-            className="max-w-full max-h-full select-none"
-          />
+          <VideoPlayer key={photo.id} photo={photo} />
         ) : (
           <img
             key={photo.id}

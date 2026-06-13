@@ -94,3 +94,7 @@ export function thumbnailUrl(photo: { id: string }) {
 export function originalUrl(photo: { filename: string }) {
   return `/uploads/originals/${photo.filename}`;
 }
+
+export function playbackUrl(photo: { id: string }) {
+  return `/uploads/playback/${photo.id}.mp4`;
+}

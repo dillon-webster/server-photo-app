@@ -143,6 +143,7 @@ export async function photoRoutes(app: FastifyInstance) {
     const unlinkResults = await Promise.allSettled([
       unlink(join(UPLOADS_DIR, "originals", photo.filename)),
       unlink(join(UPLOADS_DIR, "thumbnails", `${photo.id}.webp`)),
+      unlink(join(UPLOADS_DIR, "playback", `${photo.id}.mp4`)),
     ]);
     for (const r of unlinkResults) {
       if (r.status === "rejected") req.log.warn({ err: r.reason }, "failed to unlink file on delete");

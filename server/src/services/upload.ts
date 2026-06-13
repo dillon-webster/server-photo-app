@@ -14,12 +14,14 @@ import { photos } from "../db/schema.js";
 import { reverseGeocode } from "./geocode.js";
 import type { Photo } from "../db/schema.js";
 import { resolveUploadDate } from "./uploadDateFallback.js";
+import { createVideoPlayback } from "./videoPlayback.js";
 
 const execFileAsync = promisify(execFile);
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR ?? "./uploads";
 const ORIGINALS_DIR = join(UPLOADS_DIR, "originals");
 const THUMBNAILS_DIR = join(UPLOADS_DIR, "thumbnails");
+const PLAYBACK_DIR = join(UPLOADS_DIR, "playback");
 
 const ALLOWED_IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".gif", ".tiff", ".tif"]);
 const ALLOWED_VIDEO_EXTS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]);
@@ -43,6 +45,7 @@ function parseExifDate(raw: unknown): number | null {
 export function ensureUploadDirs() {
   mkdirSync(ORIGINALS_DIR, { recursive: true });
   mkdirSync(THUMBNAILS_DIR, { recursive: true });
+  mkdirSync(PLAYBACK_DIR, { recursive: true });
 }
 
 async function getVideoMetadata(filePath: string) {
@@ -159,6 +162,7 @@ export async function processUpload(
   const originalPath = join(ORIGINALS_DIR, filename);
   const thumbnailFilename = `${id}.webp`;
   const thumbnailPath = join(THUMBNAILS_DIR, thumbnailFilename);
+  const playbackPath = join(PLAYBACK_DIR, `${id}.mp4`);
 
   await pipeline(fileStream, createWriteStream(originalPath));
 
@@ -186,6 +190,7 @@ export async function processUpload(
       height = meta.height;
       duration = meta.duration;
       await extractVideoThumbnail(originalPath, thumbnailPath);
+      await createVideoPlayback(originalPath, playbackPath);
     } else {
       let exifData: Awaited<ReturnType<typeof exifr.parse>> = null;
       try {
@@ -246,6 +251,7 @@ export async function processUpload(
   } catch (err) {
     await unlink(originalPath).catch(() => {});
     await unlink(thumbnailPath).catch(() => {});
+    await unlink(playbackPath).catch(() => {});
     throw err;
   }
 }
