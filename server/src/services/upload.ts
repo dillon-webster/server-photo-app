@@ -23,6 +23,22 @@ const THUMBNAILS_DIR = join(UPLOADS_DIR, "thumbnails");
 const ALLOWED_IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".gif", ".tiff", ".tif"]);
 const ALLOWED_VIDEO_EXTS = new Set([".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]);
 
+// EXIF dates arrive as JS Date objects OR raw strings like "2015:10:15 14:22:01"
+// (colons as date separators — not ISO-parseable by Date constructor)
+function parseExifDate(raw: unknown): number | null {
+  if (!raw) return null;
+  let d: Date;
+  if (raw instanceof Date) {
+    d = raw;
+  } else if (typeof raw === "string") {
+    d = new Date(raw.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3"));
+  } else {
+    return null;
+  }
+  const ts = d.getTime();
+  return Number.isFinite(ts) && ts > 0 ? ts : null;
+}
+
 export function ensureUploadDirs() {
   mkdirSync(ORIGINALS_DIR, { recursive: true });
   mkdirSync(THUMBNAILS_DIR, { recursive: true });
@@ -176,9 +192,13 @@ export async function processUpload(
         // EXIF parsing is best-effort
       }
 
-      const rawDate = exifData?.DateTimeOriginal ?? exifData?.CreateDate;
-      const rawTs = rawDate ? new Date(rawDate).getTime() : null;
-      dateTaken = rawTs != null && Number.isFinite(rawTs) ? rawTs : null;
+      const rawDate =
+        exifData?.DateTimeOriginal ??
+        exifData?.CreateDate ??
+        exifData?.SubSecDateTimeOriginal ??
+        exifData?.SubSecCreateDate ??
+        exifData?.DateTime;
+      dateTaken = parseExifDate(rawDate);
       latitude = exifData?.latitude ?? null;
       longitude = exifData?.longitude ?? null;
 
