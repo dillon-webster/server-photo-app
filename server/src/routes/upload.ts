@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { processUpload } from "../services/upload.js";
 import { parseUploadDateFallback } from "../services/uploadDateFallback.js";
+import { uploadErrorMessage } from "./uploadError.js";
 
 export async function uploadRoutes(app: FastifyInstance) {
   app.post("/api/upload", async (req, reply) => {
@@ -38,7 +39,11 @@ export async function uploadRoutes(app: FastifyInstance) {
         results.push({ filename: part.filename, ok: true, photo });
       } catch (err) {
         req.log.error({ err, filename: part.filename }, "upload failed");
-        results.push({ filename: part.filename, ok: false });
+        results.push({
+          filename: part.filename,
+          ok: false,
+          error: uploadErrorMessage(err),
+        });
       }
     }
 

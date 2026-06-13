@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
+import { uploadResultError } from "../uploadResult";
 
 const MONTHS = [
   "January",
@@ -64,7 +65,7 @@ export function UploadButton() {
             const result = results[i - offset];
             return result?.ok
               ? { ...item, done: true, loaded: item.total }
-              : { ...item, error: "Upload failed" };
+              : { ...item, error: result ? uploadResultError(result) : "Upload failed" };
           });
         });
         if (results.some((r) => r.ok)) {
@@ -238,6 +239,11 @@ export function UploadButton() {
                 <span className="truncate max-w-[180px]">{u.name}</span>
                 <span>{u.error ? "Error" : u.done ? "Done" : `${Math.round((u.loaded / u.total) * 100)}%`}</span>
               </div>
+              {u.error && (
+                <p className="mb-1 text-xs leading-snug text-red-300 break-words">
+                  {u.error}
+                </p>
+              )}
               <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${u.error ? "bg-red-400" : "bg-blue-400"}`}

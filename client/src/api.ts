@@ -1,5 +1,9 @@
 import type { Photo, Album, AlbumWithPhotos, TimelineYear, MapPhoto } from "./types";
 import { buildUploadFormData, type UploadDateFallback } from "./uploadFormData";
+import {
+  type UploadResult,
+  uploadRequestError,
+} from "./uploadResult";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, options);
@@ -58,7 +62,7 @@ export const api = {
     files: File[],
     fallback: UploadDateFallback,
     onProgress?: (loaded: number, total: number) => void
-  ): Promise<{ filename: string; ok: boolean; photo?: Photo }[]> => {
+  ): Promise<UploadResult[]> => {
     return new Promise((resolve, reject) => {
       const formData = buildUploadFormData(files, fallback);
 
@@ -73,7 +77,7 @@ export const api = {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(JSON.parse(xhr.responseText));
         } else {
-          reject(new Error(`Upload failed: ${xhr.status}`));
+          reject(new Error(uploadRequestError(xhr.status, xhr.responseText)));
         }
       });
 
