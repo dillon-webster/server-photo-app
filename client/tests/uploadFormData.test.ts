@@ -2,19 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildUploadFormData } from "../src/uploadFormData.ts";
 
-test("appends the fallback date before upload files", () => {
+test("appends upload files without a fallback date", () => {
   const files = [
     new File(["first"], "first.jpg", { type: "image/jpeg" }),
     new File(["second"], "second.jpg", { type: "image/jpeg" }),
   ];
 
-  const formData = buildUploadFormData(files, { date: "2015-10-23" });
+  const formData = buildUploadFormData(files);
   const entries = Array.from(formData.entries());
 
-  assert.equal(entries[0][0], "fallbackDate");
-  assert.equal(entries[0][1], "2015-10-23");
   assert.deepEqual(
-    entries.slice(1).map(([name, value]) => [
+    entries.map(([name, value]) => [
       name,
       value instanceof File ? value.name : value,
     ]),

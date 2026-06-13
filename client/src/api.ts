@@ -1,5 +1,5 @@
 import type { Photo, Album, AlbumWithPhotos, TimelineYear, MapPhoto } from "./types";
-import { buildUploadFormData, type UploadDateFallback } from "./uploadFormData";
+import { buildUploadFormData } from "./uploadFormData";
 import {
   type UploadResult,
   uploadRequestError,
@@ -60,11 +60,10 @@ export const api = {
 
   upload: (
     files: File[],
-    fallback: UploadDateFallback,
     onProgress?: (loaded: number, total: number) => void
   ): Promise<UploadResult[]> => {
     return new Promise((resolve, reject) => {
-      const formData = buildUploadFormData(files, fallback);
+      const formData = buildUploadFormData(files);
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");

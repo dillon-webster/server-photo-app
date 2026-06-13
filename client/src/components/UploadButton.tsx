@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
-import { uploadResultError } from "../uploadResult";
+import { missingDatePhotoIds, uploadResultError } from "../uploadResult";
+import { dateInputToTimestamp } from "./photoDate";
 
 function localDateInputValue(date: Date) {
   const year = date.getFullYear();
@@ -22,12 +23,14 @@ export function UploadButton() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [dragging, setDragging] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [missingDateIds, setMissingDateIds] = useState<string[]>([]);
   const [fallbackDate, setFallbackDate] = useState(() => localDateInputValue(new Date()));
+  const [savingDate, setSavingDate] = useState(false);
+  const [dateError, setDateError] = useState("");
   const queryClient = useQueryClient();
 
   const uploadFiles = useCallback(
-    async (files: File[], date: string) => {
+    async (files: File[]) => {
       if (!files.length) return;
       const items: UploadItem[] = files.map((f) => ({
         name: f.name,
@@ -38,7 +41,7 @@ export function UploadButton() {
       setUploads((prev) => [...prev, ...items]);
 
       try {
-        const results = await api.upload(files, { date }, (loaded, total) => {
+        const results = await api.upload(files, (loaded, total) => {
           setUploads((prev) =>
             prev.map((item, i) =>
               i >= prev.length - files.length
@@ -62,6 +65,11 @@ export function UploadButton() {
           queryClient.invalidateQueries({ queryKey: ["timeline"] });
           queryClient.invalidateQueries({ queryKey: ["map-photos"] });
         }
+        const ids = missingDatePhotoIds(results);
+        if (ids.length) {
+          setMissingDateIds(ids);
+          setDateError("");
+        }
         setTimeout(() => setUploads((prev) => prev.filter((u) => !u.done)), 2500);
       } catch (err) {
         setUploads((prev) =>
@@ -78,18 +86,28 @@ export function UploadButton() {
 
   const stageFiles = useCallback((files: File[]) => {
     if (!files.length) return;
-    setPendingFiles(files);
-  }, []);
+    void uploadFiles(files);
+  }, [uploadFiles]);
 
-  const confirmUpload = useCallback(() => {
-    if (!pendingFiles.length || !fallbackDate) {
-      return;
+  const saveMissingDates = useCallback(async () => {
+    if (!missingDateIds.length || !fallbackDate || savingDate) return;
+
+    setSavingDate(true);
+    setDateError("");
+    try {
+      const dateTaken = dateInputToTimestamp(fallbackDate);
+      await Promise.all(
+        missingDateIds.map((id) => api.photos.update(id, { dateTaken })),
+      );
+      setMissingDateIds([]);
+      queryClient.invalidateQueries({ queryKey: ["timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["map-photos"] });
+    } catch (err) {
+      setDateError(err instanceof Error ? err.message : "Could not save date");
+    } finally {
+      setSavingDate(false);
     }
-
-    const files = pendingFiles;
-    setPendingFiles([]);
-    void uploadFiles(files, fallbackDate);
-  }, [pendingFiles, fallbackDate, uploadFiles]);
+  }, [fallbackDate, missingDateIds, queryClient, savingDate]);
 
   // Global drag-drop
   useEffect(() => {
@@ -137,12 +155,12 @@ export function UploadButton() {
         Add photos
       </button>
 
-      {pendingFiles.length > 0 && (
+      {missingDateIds.length > 0 && (
         <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl">
-            <h2 className="text-white text-lg font-medium">When were these taken?</h2>
+            <h2 className="text-white text-lg font-medium">Date needed</h2>
             <p className="mt-1 text-sm text-white/50">
-              This date is only used for items missing an Apple date.
+              {missingDateIds.length} uploaded item{missingDateIds.length === 1 ? "" : "s"} had no Apple date.
             </p>
 
             <div className="mt-5">
@@ -158,25 +176,18 @@ export function UploadButton() {
               </label>
             </div>
 
-            <p className="mt-3 text-xs text-white/35">
-              {pendingFiles.length} item{pendingFiles.length === 1 ? "" : "s"} selected
-            </p>
+            {dateError && (
+              <p className="mt-3 text-xs text-red-300">{dateError}</p>
+            )}
 
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setPendingFiles([])}
-                className="rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white/80"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmUpload}
-                disabled={!fallbackDate}
+                onClick={() => void saveMissingDates()}
+                disabled={!fallbackDate || savingDate}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40"
               >
-                Upload
+                {savingDate ? "Saving..." : "Save date"}
               </button>
             </div>
           </div>

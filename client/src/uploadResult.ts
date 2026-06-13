@@ -11,6 +11,13 @@ export function uploadResultError(result: UploadResult) {
   return result.error?.trim() || "Upload failed";
 }
 
+export function missingDatePhotoIds(results: UploadResult[]) {
+  return results.flatMap((result) => {
+    const photo = result.photo;
+    return result.ok && photo && photo.dateTaken == null ? [photo.id] : [];
+  });
+}
+
 export function uploadRequestError(status: number, responseText: string) {
   try {
     const body = JSON.parse(responseText) as {
