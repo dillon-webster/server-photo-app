@@ -24,8 +24,6 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editDate, setEditDate] = useState("");
-  const [editCity, setEditCity] = useState("");
-  const [editCountry, setEditCountry] = useState("");
   const [editLocationSearch, setEditLocationSearch] = useState("");
 
   const prev = useCallback(() => {
@@ -38,9 +36,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
 
   const startEditing = useCallback(() => {
     setEditDate(photo.dateTaken ? toDatetimeLocal(photo.dateTaken) : "");
-    setEditCity(photo.city ?? "");
-    setEditCountry(photo.country ?? "");
-    setEditLocationSearch("");
+    setEditLocationSearch([photo.city, photo.country].filter(Boolean).join(", "));
     setEditing(true);
   }, [photo]);
 
@@ -49,8 +45,6 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     try {
       await api.photos.update(photo.id, {
         dateTaken: editDate || null,
-        city: editCity.trim() || null,
-        country: editCountry.trim() || null,
         locationSearch: editLocationSearch.trim() || null,
       });
       queryClient.invalidateQueries({ queryKey: ["timeline"] });
@@ -191,49 +185,39 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       {/* Footer */}
       <div className="px-4 py-3 shrink-0 text-center">
         {editing ? (
-          <div className="flex flex-col items-center gap-2 max-w-xs mx-auto">
-            <input
-              type="datetime-local"
-              value={editDate}
-              onChange={e => setEditDate(e.target.value)}
-              className="bg-white/10 text-white text-sm rounded px-2 py-1 w-full border border-white/20"
-            />
-            <input
-              type="text"
-              placeholder="Search location (e.g. Delta Center, Salt Lake City)"
-              value={editLocationSearch}
-              onChange={e => setEditLocationSearch(e.target.value)}
-              className="bg-white/10 text-white text-sm rounded px-2 py-1 w-full border border-white/20 placeholder:text-white/30"
-            />
-            <div className="flex gap-2 w-full">
+          <div className="flex flex-col gap-2 w-64 mx-auto">
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-xs uppercase tracking-wide">Date</span>
               <input
-                type="text"
-                placeholder="City"
-                value={editCity}
-                onChange={e => setEditCity(e.target.value)}
-                className="bg-white/10 text-white text-sm rounded px-2 py-1 flex-1 border border-white/20 placeholder:text-white/30"
-              />
-              <input
-                type="text"
-                placeholder="Country"
-                value={editCountry}
-                onChange={e => setEditCountry(e.target.value)}
-                className="bg-white/10 text-white text-sm rounded px-2 py-1 flex-1 border border-white/20 placeholder:text-white/30"
+                type="datetime-local"
+                value={editDate}
+                onChange={e => setEditDate(e.target.value)}
+                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-white/30 text-xs uppercase tracking-wide">Location</span>
+              <input
+                type="text"
+                placeholder="Search for a place…"
+                value={editLocationSearch}
+                onChange={e => setEditLocationSearch(e.target.value)}
+                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/25"
+              />
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                onClick={() => setEditing(false)}
+                className="text-white/40 text-sm px-4 py-1.5 hover:text-white/70 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="text-white text-xs px-3 py-1 bg-white/20 hover:bg-white/30 rounded transition-colors disabled:opacity-50"
+                className="text-white text-sm px-4 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg transition-colors disabled:opacity-40"
               >
                 {saving ? "Saving…" : "Save"}
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="text-white/60 text-xs px-3 py-1 hover:text-white transition-colors"
-              >
-                Cancel
               </button>
             </div>
           </div>

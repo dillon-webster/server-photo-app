@@ -4,7 +4,7 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { db } from "../db/client.js";
 import { albums, photos } from "../db/schema.js";
-import { forwardGeocode } from "../services/geocode.js";
+import { forwardGeocode, reverseGeocode } from "../services/geocode.js";
 
 interface PhotoPatch {
   dateTaken?: string | null;
@@ -108,6 +108,9 @@ export async function photoRoutes(app: FastifyInstance) {
         if (coords) {
           patch.latitude = coords.latitude;
           patch.longitude = coords.longitude;
+          const geo = await reverseGeocode(coords.latitude, coords.longitude);
+          patch.city = geo.city;
+          patch.country = geo.country;
         }
       }
     }
