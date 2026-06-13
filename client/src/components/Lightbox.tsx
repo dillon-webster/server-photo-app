@@ -7,6 +7,7 @@ import { originalUrl, api } from "../api";
 import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 import { MapPicker } from "./MapPicker";
 import { dateInputToTimestamp, timestampToDateInput } from "./photoDate";
+import { savePhotoLocation } from "./photoLocation";
 
 
 interface Props {
@@ -26,20 +27,18 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editLocationSearch, setEditLocationSearch] = useState("");
-  const [pickedCoords, setPickedCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   const prev = useCallback(() => {
-    if (index > 0) { setEditing(false); setLivePhoto(null); setPickedCoords(null); onNavigate(index - 1); }
+    if (index > 0) { setEditing(false); setLivePhoto(null); onNavigate(index - 1); }
   }, [index, onNavigate]);
 
   const next = useCallback(() => {
-    if (index < photos.length - 1) { setEditing(false); setLivePhoto(null); setPickedCoords(null); onNavigate(index + 1); }
+    if (index < photos.length - 1) { setEditing(false); setLivePhoto(null); onNavigate(index + 1); }
   }, [index, photos.length, onNavigate]);
 
   const startEditing = useCallback(() => {
     setEditDate(photo.dateTaken != null ? timestampToDateInput(photo.dateTaken) : "");
     setEditLocationSearch([photo.city, photo.country].filter(Boolean).join(", "));
-    setPickedCoords(null);
     setEditing(true);
   }, [photo]);
 
@@ -48,9 +47,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     try {
       const updated = await api.photos.update(photo.id, {
         dateTaken: editDate ? dateInputToTimestamp(editDate) : null,
-        ...(pickedCoords
-          ? { latitude: pickedCoords.lat, longitude: pickedCoords.lon }
-          : { locationSearch: editLocationSearch.trim() || null }),
+        locationSearch: editLocationSearch.trim() || null,
       });
       setLivePhoto(updated);
       queryClient.invalidateQueries({ queryKey: ["timeline"] });
@@ -60,7 +57,20 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [photo.id, editDate, editLocationSearch, pickedCoords, queryClient]);
+  }, [photo.id, editDate, editLocationSearch, queryClient]);
+
+  const handleLocationConfirm = useCallback(async (lat: number, lon: number) => {
+    const updated = await savePhotoLocation(api.photos.update, photo.id, lat, lon);
+    setLivePhoto(updated);
+    setEditLocationSearch([updated.city, updated.country].filter(Boolean).join(", "));
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["timeline"] }),
+      queryClient.invalidateQueries({ queryKey: ["map-photos"] }),
+      queryClient.invalidateQueries({ queryKey: ["album"] }),
+    ]);
+    setShowMapPicker(false);
+    setEditing(false);
+  }, [photo.id, queryClient]);
 
   const handleDelete = useCallback(async () => {
     if (!photo || !confirm(`Delete "${photo.originalName}"? This can't be undone.`)) return;
@@ -208,7 +218,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
                   type="text"
                   placeholder="Search for a place…"
                   value={editLocationSearch}
-                  onChange={e => { setEditLocationSearch(e.target.value); setPickedCoords(null); }}
+                  onChange={e => setEditLocationSearch(e.target.value)}
                   className="flex-1 bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/25 min-w-0"
                 />
                 <button
@@ -223,11 +233,6 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
                   </svg>
                 </button>
               </div>
-              {pickedCoords && (
-                <p className="text-white/40 text-xs pl-1">
-                  {pickedCoords.lat.toFixed(4)}°, {pickedCoords.lon.toFixed(4)}°
-                </p>
-              )}
             </div>
             <div className="flex gap-2 justify-end pt-1">
               <button
@@ -269,11 +274,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         <MapPicker
           initialLat={photo.latitude}
           initialLon={photo.longitude}
-          onConfirm={(lat, lon) => {
-            setPickedCoords({ lat, lon });
-            setEditLocationSearch("");
-            setShowMapPicker(false);
-          }}
+          onConfirm={handleLocationConfirm}
           onCancel={() => setShowMapPicker(false)}
         />
       )}
