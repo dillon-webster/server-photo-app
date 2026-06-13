@@ -1,4 +1,5 @@
 import type { Photo, Album, AlbumWithPhotos, TimelineYear, MapPhoto } from "./types";
+import { buildUploadFormData, type UploadDateFallback } from "./uploadFormData";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, options);
@@ -55,11 +56,11 @@ export const api = {
 
   upload: (
     files: File[],
+    fallback: UploadDateFallback,
     onProgress?: (loaded: number, total: number) => void
   ): Promise<{ filename: string; ok: boolean; photo?: Photo }[]> => {
     return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
+      const formData = buildUploadFormData(files, fallback);
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");

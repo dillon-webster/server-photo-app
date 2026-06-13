@@ -6,6 +6,7 @@ dist/
 data/
 
 # Local tooling and OS files
+docs/
 *.log
 .DS_Store
 .idea/

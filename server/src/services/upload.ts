@@ -13,6 +13,7 @@ import { db } from "../db/client.js";
 import { photos } from "../db/schema.js";
 import { reverseGeocode } from "./geocode.js";
 import type { Photo } from "../db/schema.js";
+import { resolveUploadDate } from "./uploadDateFallback.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -139,7 +140,8 @@ async function extractVideoThumbnail(
 export async function processUpload(
   fileStream: Readable,
   originalName: string,
-  mimeType: string
+  mimeType: string,
+  fallbackDate: number | null = null,
 ): Promise<Photo> {
   const id = uuidv4();
   const rawExt = extname(originalName).toLowerCase();
@@ -212,6 +214,7 @@ export async function processUpload(
         .webp({ quality: 80 })
         .toFile(thumbnailPath);
     }
+    dateTaken = resolveUploadDate(dateTaken, fallbackDate);
 
     let city: string | null = null;
     let country: string | null = null;

@@ -2,6 +2,21 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 interface UploadItem {
   name: string;
   loaded: number;
@@ -11,13 +26,17 @@ interface UploadItem {
 }
 
 export function UploadButton() {
+  const now = new Date();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [fallbackYear, setFallbackYear] = useState(now.getFullYear());
+  const [fallbackMonth, setFallbackMonth] = useState(now.getMonth() + 1);
   const queryClient = useQueryClient();
 
-  const handleFiles = useCallback(
-    async (files: File[]) => {
+  const uploadFiles = useCallback(
+    async (files: File[], year: number, month: number) => {
       if (!files.length) return;
       const items: UploadItem[] = files.map((f) => ({
         name: f.name,
@@ -28,7 +47,7 @@ export function UploadButton() {
       setUploads((prev) => [...prev, ...items]);
 
       try {
-        const results = await api.upload(files, (loaded, total) => {
+        const results = await api.upload(files, { year, month }, (loaded, total) => {
           setUploads((prev) =>
             prev.map((item, i) =>
               i >= prev.length - files.length
@@ -66,6 +85,29 @@ export function UploadButton() {
     [queryClient]
   );
 
+  const stageFiles = useCallback((files: File[]) => {
+    if (!files.length) return;
+    setPendingFiles(files);
+  }, []);
+
+  const confirmUpload = useCallback(() => {
+    if (
+      !pendingFiles.length ||
+      !Number.isInteger(fallbackYear) ||
+      fallbackYear < 1000 ||
+      fallbackYear > 9999 ||
+      !Number.isInteger(fallbackMonth) ||
+      fallbackMonth < 1 ||
+      fallbackMonth > 12
+    ) {
+      return;
+    }
+
+    const files = pendingFiles;
+    setPendingFiles([]);
+    void uploadFiles(files, fallbackYear, fallbackMonth);
+  }, [pendingFiles, fallbackYear, fallbackMonth, uploadFiles]);
+
   // Global drag-drop
   useEffect(() => {
     const onDragOver = (e: DragEvent) => { e.preventDefault(); setDragging(true); };
@@ -76,7 +118,7 @@ export function UploadButton() {
       const files = Array.from(e.dataTransfer?.files ?? []).filter(
         (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
       );
-      handleFiles(files);
+      stageFiles(files);
     };
     document.addEventListener("dragover", onDragOver);
     document.addEventListener("dragleave", onDragLeave);
@@ -86,7 +128,7 @@ export function UploadButton() {
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("drop", onDrop);
     };
-  }, [handleFiles]);
+  }, [stageFiles]);
 
   return (
     <>
@@ -96,7 +138,10 @@ export function UploadButton() {
         multiple
         accept="image/*,video/*"
         className="hidden"
-        onChange={(e) => handleFiles(Array.from(e.target.files ?? []))}
+        onChange={(e) => {
+          stageFiles(Array.from(e.target.files ?? []));
+          e.target.value = "";
+        }}
       />
 
       <button
@@ -108,6 +153,73 @@ export function UploadButton() {
         </svg>
         Add photos
       </button>
+
+      {pendingFiles.length > 0 && (
+        <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl">
+            <h2 className="text-white text-lg font-medium">When were these taken?</h2>
+            <p className="mt-1 text-sm text-white/50">
+              This month is only used for photos missing an Apple date.
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-wide text-white/40">Month</span>
+                <select
+                  value={fallbackMonth}
+                  onChange={(e) => setFallbackMonth(Number(e.target.value))}
+                  className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
+                >
+                  {MONTHS.map((month, index) => (
+                    <option key={month} value={index + 1} className="bg-neutral-900">
+                      {month}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs uppercase tracking-wide text-white/40">Year</span>
+                <input
+                  type="number"
+                  min={1000}
+                  max={9999}
+                  required
+                  value={fallbackYear}
+                  onChange={(e) => setFallbackYear(Number(e.target.value))}
+                  className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white focus:border-white/30 focus:outline-none"
+                />
+              </label>
+            </div>
+
+            <p className="mt-3 text-xs text-white/35">
+              {pendingFiles.length} item{pendingFiles.length === 1 ? "" : "s"} selected
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingFiles([])}
+                className="rounded-lg px-4 py-2 text-sm text-white/50 hover:text-white/80"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmUpload}
+                disabled={
+                  !Number.isInteger(fallbackYear) ||
+                  fallbackYear < 1000 ||
+                  fallbackYear > 9999
+                }
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40"
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Drag overlay */}
       {dragging && (
