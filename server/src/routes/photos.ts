@@ -5,9 +5,10 @@ import { join } from "path";
 import { db } from "../db/client.js";
 import { albums, photos } from "../db/schema.js";
 import { forwardGeocode, reverseGeocode } from "../services/geocode.js";
+import { normalizePhotoDate } from "./photoDate.js";
 
 interface PhotoPatch {
-  dateTaken?: string | null;
+  dateTaken?: string | number | null;
   city?: string | null;
   country?: string | null;
   latitude?: number | null;
@@ -84,8 +85,11 @@ export async function photoRoutes(app: FastifyInstance) {
     const patch: Partial<typeof photos.$inferInsert> = {};
 
     if ("dateTaken" in body) {
-      const ts = body.dateTaken ? new Date(body.dateTaken).getTime() : null;
-      patch.dateTaken = ts != null && Number.isFinite(ts) ? ts : null;
+      const normalizedDate = normalizePhotoDate(body.dateTaken);
+      if (!normalizedDate.valid) {
+        return reply.status(400).send({ error: "Invalid date" });
+      }
+      patch.dateTaken = normalizedDate.value;
     }
     if ("city" in body) patch.city = body.city ?? null;
     if ("country" in body) patch.country = body.country ?? null;

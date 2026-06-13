@@ -6,6 +6,7 @@ import type { Photo } from "../types";
 import { originalUrl, api } from "../api";
 import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 import { MapPicker } from "./MapPicker";
+import { dateInputToTimestamp, timestampToDateInput } from "./photoDate";
 
 
 interface Props {
@@ -36,7 +37,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   }, [index, photos.length, onNavigate]);
 
   const startEditing = useCallback(() => {
-    setEditDate(photo.dateTaken ? format(new Date(photo.dateTaken), "MMMM d, yyyy") : "");
+    setEditDate(photo.dateTaken != null ? timestampToDateInput(photo.dateTaken) : "");
     setEditLocationSearch([photo.city, photo.country].filter(Boolean).join(", "));
     setPickedCoords(null);
     setEditing(true);
@@ -46,7 +47,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     setSaving(true);
     try {
       const updated = await api.photos.update(photo.id, {
-        dateTaken: editDate || null,
+        dateTaken: editDate ? dateInputToTimestamp(editDate) : null,
         ...(pickedCoords
           ? { latitude: pickedCoords.lat, longitude: pickedCoords.lon }
           : { locationSearch: editLocationSearch.trim() || null }),
@@ -194,11 +195,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
             <div className="flex flex-col gap-1">
               <span className="text-white/30 text-xs uppercase tracking-wide">Date</span>
               <input
-                type="text"
-                placeholder="e.g. Oct 29, 2015"
+                type="date"
                 value={editDate}
                 onChange={e => setEditDate(e.target.value)}
-                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none placeholder:text-white/25"
+                className="bg-white/10 text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:border-white/30 focus:outline-none"
               />
             </div>
             <div className="flex flex-col gap-1">
