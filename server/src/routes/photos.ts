@@ -94,6 +94,11 @@ export async function photoRoutes(app: FastifyInstance) {
 
     // Auto-geocode: locationSearch takes priority; fall back to city+country for photos with no coords
     const hasExplicitCoords = "latitude" in body || "longitude" in body;
+    if (hasExplicitCoords && patch.latitude != null && patch.longitude != null) {
+      const geo = await reverseGeocode(patch.latitude, patch.longitude);
+      patch.city = geo.city;
+      patch.country = geo.country;
+    }
     if (!hasExplicitCoords) {
       const searchQuery = body.locationSearch?.trim();
       const fallbackQuery = (() => {
