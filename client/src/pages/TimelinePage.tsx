@@ -5,6 +5,14 @@ import { PhotoGrid } from "../components/PhotoGrid";
 import { TimelineScrubber, type ScrubberYear } from "../components/TimelineScrubber";
 
 const NAVBAR_H = 56;
+const ZOOM_SIZES = [100, 150, 200, 280, 360];
+const ZOOM_KEY = "timeline-zoom";
+
+function loadZoom(): number {
+  const saved = localStorage.getItem(ZOOM_KEY);
+  const idx = saved !== null ? Number(saved) : 2;
+  return Math.min(Math.max(idx, 0), ZOOM_SIZES.length - 1);
+}
 
 export function TimelinePage() {
   const { data, isLoading } = useQuery({
@@ -15,6 +23,12 @@ export function TimelinePage() {
   const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const activeSet = useRef(new Set<string>());
   const [activeYear, setActiveYear] = useState<string | null>(null);
+
+  const [zoomIdx, setZoomIdx] = useState(loadZoom);
+  const columnSize = ZOOM_SIZES[zoomIdx];
+
+  const zoomIn = () => setZoomIdx((i) => { const n = Math.min(i + 1, ZOOM_SIZES.length - 1); localStorage.setItem(ZOOM_KEY, String(n)); return n; });
+  const zoomOut = () => setZoomIdx((i) => { const n = Math.max(i - 1, 0); localStorage.setItem(ZOOM_KEY, String(n)); return n; });
 
   const yearList = useMemo(() => data?.map((y) => y.year) ?? [], [data]);
 
@@ -92,7 +106,7 @@ export function TimelinePage() {
           key={yearGroup.year}
           ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
         >
-          <h2 className="text-xs font-semibold text-white/40 px-5 pt-6 pb-1 sticky top-14 bg-neutral-950/95 backdrop-blur-sm z-10 tracking-widest uppercase">
+          <h2 className="text-xs font-semibold text-white/40 px-5 pt-6 pb-1 sticky top-14 bg-neutral-900/95 backdrop-blur-sm z-10 tracking-widest uppercase">
             {yearGroup.year}
           </h2>
           {yearGroup.months.map((monthGroup) => (
@@ -100,13 +114,30 @@ export function TimelinePage() {
               <h3 className="text-base font-semibold text-white/70 px-5 pt-4 pb-2">
                 {monthGroup.month}
               </h3>
-              <PhotoGrid photos={monthGroup.photos} />
+              <PhotoGrid photos={monthGroup.photos} columnSize={columnSize} />
             </div>
           ))}
         </div>
       ))}
 
       <TimelineScrubber years={scrubberYears} activeYear={activeYear} />
+
+      <div className="fixed bottom-6 left-6 flex gap-1 z-20">
+        <button
+          onClick={zoomOut}
+          disabled={zoomIdx === 0}
+          className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white text-lg flex items-center justify-center transition-colors"
+        >
+          −
+        </button>
+        <button
+          onClick={zoomIn}
+          disabled={zoomIdx === ZOOM_SIZES.length - 1}
+          className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed text-white text-lg flex items-center justify-center transition-colors"
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 }

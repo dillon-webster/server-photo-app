@@ -8,6 +8,7 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [react(), tailwindcss()],
   server: {
+    host: true,
     proxy: {
       "/api": "http://localhost:3001",
       "/uploads": "http://localhost:3001",

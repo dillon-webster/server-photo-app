@@ -15,16 +15,17 @@ interface Props {
   selectable?: boolean;
   selected?: Set<string>;
   onSelect?: (id: string) => void;
+  columnSize?: number;
 }
 
-export function PhotoGrid({ photos, selectable, selected, onSelect }: Props) {
+export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize = 220 }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
     <>
       <div
         className="grid gap-1 px-5"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
+        style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${columnSize}px, 1fr))` }}
       >
         {photos.map((photo, i) => {
           const isSelected = selected?.has(photo.id);
