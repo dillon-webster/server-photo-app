@@ -23,8 +23,8 @@ export function PhotoGrid({ photos, selectable, selected, onSelect }: Props) {
   return (
     <>
       <div
-        className="grid gap-0.5"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
+        className="grid gap-1 px-5"
+        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
       >
         {photos.map((photo, i) => {
           const isSelected = selected?.has(photo.id);
