@@ -71,7 +71,7 @@ export function TimelineScrubber({ years, activeYear }: Props) {
     <>
       {isDragging && tooltipYear && (
         <div
-          className="fixed right-10 z-50 bg-neutral-800 border border-white/10 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-xl pointer-events-none select-none"
+          className="fixed right-14 z-50 bg-neutral-800 border border-white/10 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-xl pointer-events-none select-none"
           style={{ top: Math.max(56, tooltipY - 16) }}
         >
           {tooltipYear}
@@ -79,7 +79,7 @@ export function TimelineScrubber({ years, activeYear }: Props) {
       )}
       <div
         ref={stripRef}
-        className="fixed right-0 top-14 bottom-0 z-20 w-8 flex flex-col items-center justify-around py-4 select-none touch-none cursor-pointer"
+        className="fixed right-3 top-14 bottom-0 z-20 w-8 flex flex-col items-center justify-around py-4 select-none touch-none cursor-pointer"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
