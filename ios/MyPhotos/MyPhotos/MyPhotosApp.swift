@@ -11,7 +11,14 @@ import SwiftUI
 struct MyPhotosApp: App {
     var body: some Scene {
         WindowGroup {
-            TimelineView()
+            TabView {
+                TimelineView()
+                    .tabItem { Label("Photos", systemImage: "photo.on.rectangle") }
+                MapView()
+                    .tabItem { Label("Map", systemImage: "map") }
+                AlbumsView()
+                    .tabItem { Label("Albums", systemImage: "rectangle.stack") }
+            }
         }
     }
 }

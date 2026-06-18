@@ -14,6 +14,9 @@
 		BB0000000000000000000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* Models.swift */; };
 		BB0000000000000000000006 /* MyPhotosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* MyPhotosApp.swift */; };
 		BB0000000000000000000007 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* TimelineView.swift */; };
+		BB0000000000000000000008 /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000009 /* MapView.swift */; };
+		BB0000000000000000000009 /* AlbumsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000A /* AlbumsView.swift */; };
+		BB000000000000000000000A /* AlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* AlbumDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +28,9 @@
 		AA0000000000000000000006 /* MyPhotosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyPhotosApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0000000000000000000009 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000A /* AlbumsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumsView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000B /* AlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumDetailView.swift; sourceTree = "<group>"; };
 		51D7A9D42FE4385E00FA228B /* MyPhotos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyPhotos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -65,6 +71,9 @@
 				AA0000000000000000000005 /* Models.swift */,
 				AA0000000000000000000006 /* MyPhotosApp.swift */,
 				AA0000000000000000000007 /* TimelineView.swift */,
+				AA0000000000000000000009 /* MapView.swift */,
+				AA000000000000000000000A /* AlbumsView.swift */,
+				AA000000000000000000000B /* AlbumDetailView.swift */,
 				AA0000000000000000000008 /* Info.plist */,
 			);
 			path = MyPhotos;
@@ -148,6 +157,9 @@
 				BB0000000000000000000005 /* Models.swift in Sources */,
 				BB0000000000000000000006 /* MyPhotosApp.swift in Sources */,
 				BB0000000000000000000007 /* TimelineView.swift in Sources */,
+				BB0000000000000000000008 /* MapView.swift in Sources */,
+				BB0000000000000000000009 /* AlbumsView.swift in Sources */,
+				BB000000000000000000000A /* AlbumDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
