@@ -5,8 +5,10 @@ import {
   uploadRequestError,
 } from "./uploadResult";
 
+const BASE = (import.meta.env.VITE_SERVER_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, options);
+  const res = await fetch(BASE + url, options);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error((err as { error: string }).error ?? res.statusText);
@@ -66,7 +68,7 @@ export const api = {
       const formData = buildUploadFormData(files);
 
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/upload");
+      xhr.open("POST", BASE + "/api/upload");
 
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) onProgress?.(e.loaded, e.total);
@@ -87,13 +89,13 @@ export const api = {
 };
 
 export function thumbnailUrl(photo: { id: string }) {
-  return `/uploads/thumbnails/${photo.id}.webp`;
+  return `${BASE}/uploads/thumbnails/${photo.id}.webp`;
 }
 
 export function originalUrl(photo: { filename: string }) {
-  return `/uploads/originals/${photo.filename}`;
+  return `${BASE}/uploads/originals/${photo.filename}`;
 }
 
 export function playbackUrl(photo: { id: string }) {
-  return `/uploads/playback/${photo.id}.mp4`;
+  return `${BASE}/uploads/playback/${photo.id}.mp4`;
 }

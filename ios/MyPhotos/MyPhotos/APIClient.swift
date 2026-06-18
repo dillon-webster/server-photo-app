@@ -3,8 +3,9 @@ import Foundation
 class APIClient {
     static let shared = APIClient()
 
-    // Change this to your server's Tailscale IP
-    var baseURL = "http://100.100.212.32:3002"
+    var baseURL: String {
+        UserDefaults.standard.string(forKey: "serverURL") ?? ""
+    }
 
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()

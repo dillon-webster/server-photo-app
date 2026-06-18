@@ -17,6 +17,7 @@
 		BB0000000000000000000008 /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000009 /* MapView.swift */; };
 		BB0000000000000000000009 /* AlbumsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000A /* AlbumsView.swift */; };
 		BB000000000000000000000A /* AlbumDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* AlbumDetailView.swift */; };
+		BB000000000000000000000B /* ServerSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* ServerSetupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		AA0000000000000000000009 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000A /* AlbumsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumsView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000B /* AlbumDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000C /* ServerSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerSetupView.swift; sourceTree = "<group>"; };
 		51D7A9D42FE4385E00FA228B /* MyPhotos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyPhotos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -74,6 +76,7 @@
 				AA0000000000000000000009 /* MapView.swift */,
 				AA000000000000000000000A /* AlbumsView.swift */,
 				AA000000000000000000000B /* AlbumDetailView.swift */,
+				AA000000000000000000000C /* ServerSetupView.swift */,
 				AA0000000000000000000008 /* Info.plist */,
 			);
 			path = MyPhotos;
@@ -160,6 +163,7 @@
 				BB0000000000000000000008 /* MapView.swift in Sources */,
 				BB0000000000000000000009 /* AlbumsView.swift in Sources */,
 				BB000000000000000000000A /* AlbumDetailView.swift in Sources */,
+				BB000000000000000000000B /* ServerSetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
