@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join, resolve } from "path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import staticFiles from "@fastify/static";
 import { db, sqlite, runMigrations } from "./db/client.js";
@@ -10,6 +11,7 @@ import { ensureUploadDirs } from "./services/upload.js";
 import { uploadRoutes } from "./routes/upload.js";
 import { photoRoutes } from "./routes/photos.js";
 import { albumRoutes } from "./routes/albums.js";
+import { authRoutes } from "./routes/auth.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -23,6 +25,21 @@ runMigrations(MIGRATIONS_DIR);
 const app = Fastify({ logger: { transport: { target: "pino-pretty" } } });
 
 await app.register(cors, { origin: true });
+
+const authEnabled = !!process.env.AUTH_PASSWORD;
+if (authEnabled) {
+  await app.register(jwt, { secret: process.env.JWT_SECRET ?? process.env.AUTH_PASSWORD! });
+  app.addHook("preHandler", async (req, reply) => {
+    if (req.url === "/api/auth/login") return;
+    if (!req.url.startsWith("/api/")) return;
+    try {
+      await req.jwtVerify();
+    } catch {
+      reply.status(401).send({ error: "Unauthorized" });
+    }
+  });
+}
+
 await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 500 MB
 
 // Serve upload files
@@ -39,6 +56,7 @@ await app.register(staticFiles, {
   decorateReply: false,
 });
 
+await app.register(authRoutes);
 await app.register(uploadRoutes);
 await app.register(photoRoutes);
 await app.register(albumRoutes);

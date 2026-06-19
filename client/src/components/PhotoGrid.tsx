@@ -1,4 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => !window.matchMedia("(min-width: 640px)").matches);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 640px)");
+    const handler = (e: MediaQueryListEvent) => setMobile(!e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return mobile;
+}
 import type { Photo } from "../types";
 import { thumbnailUrl } from "../api";
 import { Lightbox } from "./Lightbox";
@@ -20,12 +31,17 @@ interface Props {
 
 export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize = 220 }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const isMobile = useIsMobile();
 
   return (
     <>
       <div
-        className="grid gap-1 px-5"
-        style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${columnSize}px, 1fr))` }}
+        className={isMobile ? "grid gap-px" : "grid gap-1 px-5"}
+        style={{
+          gridTemplateColumns: isMobile
+            ? "repeat(3, 1fr)"
+            : `repeat(auto-fill, minmax(${columnSize}px, 1fr))`,
+        }}
       >
         {photos.map((photo, i) => {
           const isSelected = selected?.has(photo.id);
