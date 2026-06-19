@@ -1,0 +1,16 @@
+{
+  "name": "Photos",
+  "short_name": "Photos",
+  "display": "standalone",
+  "background_color": "#171717",
+  "theme_color": "#171717",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

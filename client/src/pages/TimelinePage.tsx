@@ -19,18 +19,6 @@ function loadZoom(): number {
   return v >= ZOOM_MIN && v <= ZOOM_MAX ? v : ZOOM_DEFAULT;
 }
 
-// Logarithmic mapping so each slider position corresponds to a consistent column-count change
-function sliderToColumn(s: number, max: number): number {
-  const logMin = Math.log(ZOOM_MIN);
-  const logMax = Math.log(max);
-  return Math.round(Math.exp(logMin + (s / 100) * (logMax - logMin)));
-}
-
-function columnToSlider(c: number, max: number): number {
-  const logMin = Math.log(ZOOM_MIN);
-  const logMax = Math.log(max);
-  return ((Math.log(Math.max(c, ZOOM_MIN)) - logMin) / (logMax - logMin)) * 100;
-}
 
 export function TimelinePage() {
   const { data, isLoading } = useQuery({
@@ -46,24 +34,6 @@ export function TimelinePage() {
   const deferredColumnSize = useDeferredValue(columnSize);
   const contentRef = useRef<HTMLDivElement>(null);
   const [sliderMax, setSliderMax] = useState(ZOOM_MAX);
-  const [sliderVisible, setSliderVisible] = useState(true);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const bumpSlider = () => {
-    setSliderVisible(true);
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setSliderVisible(false), 3000);
-  };
-
-  useEffect(() => {
-    document.addEventListener("touchstart", bumpSlider, { passive: true });
-    hideTimer.current = setTimeout(() => setSliderVisible(false), 3000);
-    return () => {
-      document.removeEventListener("touchstart", bumpSlider);
-      if (hideTimer.current) clearTimeout(hideTimer.current);
-    };
-  }, []);
-
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
@@ -160,7 +130,7 @@ export function TimelinePage() {
           key={yearGroup.year}
           ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
         >
-          <h2 className="text-xs font-semibold text-white/40 px-5 pt-6 pb-1 sticky top-14 bg-neutral-900/95 backdrop-blur-sm z-10 tracking-widest uppercase">
+          <h2 className="year-header-sticky text-xs font-semibold text-white/40 px-5 pt-6 pb-1 bg-neutral-900/95 backdrop-blur-sm z-10 tracking-widest uppercase">
             {yearGroup.year}
           </h2>
           {yearGroup.months.map((monthGroup) => (
@@ -194,29 +164,8 @@ export function TimelinePage() {
         </button>
       </div>
 
-      {/* Mobile zoom slider — logarithmic so column changes feel even across the full range */}
-      <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-20 px-6 pb-8 pt-4 bg-neutral-900/85 backdrop-blur-md border-t border-white/10 transition-opacity duration-500 ${sliderVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
-        <div className="flex items-center gap-4">
-          <svg className="w-4 h-4 text-white/40 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <rect x="1" y="1" width="8" height="8" rx="1" />
-            <rect x="11" y="1" width="8" height="8" rx="1" />
-            <rect x="1" y="11" width="8" height="8" rx="1" />
-            <rect x="11" y="11" width="8" height="8" rx="1" />
-          </svg>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.5}
-            value={columnToSlider(columnSize, sliderMax)}
-            onChange={(e) => { bumpSlider(); saveAndSet(sliderToColumn(Number(e.target.value), sliderMax)); }}
-            className="flex-1 accent-white cursor-pointer"
-          />
-          <svg className="w-6 h-6 text-white/40 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <rect x="1" y="1" width="18" height="18" rx="2" />
-          </svg>
-        </div>
-      </div>
+      {/* Spacer for mobile bottom tab bar */}
+      <div className="sm:hidden" style={{ height: "calc(4rem + env(safe-area-inset-bottom))" }} />
     </div>
   );
 }

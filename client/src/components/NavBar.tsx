@@ -9,7 +9,7 @@ export function NavBar({ onLogout }: { onLogout?: () => void }) {
     }`;
 
   return (
-    <nav className="sticky top-0 z-30 bg-neutral-900/90 backdrop-blur-xl border-b border-white/8 px-5 py-3 flex items-center gap-1">
+    <nav className="sticky top-0 z-30 bg-neutral-900/90 backdrop-blur-xl border-b border-white/8 px-5 py-3 hidden sm:flex items-center gap-1">
       <span className="text-white font-semibold text-sm mr-2 tracking-tight">Photos</span>
       <span className="hidden sm:inline text-white/30 text-xs mr-2">v{__APP_VERSION__}</span>
       <NavLink to="/" end className={linkClass}>

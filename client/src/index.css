@@ -16,3 +16,15 @@ body {
 #root {
   min-height: 100svh;
 }
+
+/* Sticky year header: below safe area on mobile, below navbar on desktop */
+.year-header-sticky {
+  position: sticky;
+  top: 56px; /* desktop: below navbar */
+}
+
+@media (max-width: 639px) {
+  .year-header-sticky {
+    top: env(safe-area-inset-top);
+  }
+}

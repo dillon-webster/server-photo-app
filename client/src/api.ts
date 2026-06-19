@@ -94,6 +94,8 @@ export const api = {
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", BASE + "/api/upload");
+      const token = getToken();
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) onProgress?.(e.loaded, e.total);

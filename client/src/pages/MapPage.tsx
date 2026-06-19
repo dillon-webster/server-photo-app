@@ -74,7 +74,7 @@ export function MapPage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-49px)]">
+      <div className="sm:h-[calc(100dvh-49px)]" style={{ height: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 49px)" }}>
         <MapContainer
           bounds={bounds}
           boundsOptions={{ padding: [40, 40] }}

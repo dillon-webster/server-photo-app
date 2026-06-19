@@ -5,10 +5,6 @@ dist/
 # DataBase
 data/
 
-# Xcode user state (auto-updated by Xcode, not real code changes)
-ios/**/*.xcuserstate
-ios/**/xcuserdata/
-
 # Local tooling and OS files
 docs/
 *.log
