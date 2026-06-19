@@ -13,3 +13,4 @@ docs/
 .vscode/
 CLAUDE.md
 ROADMAP.md
+docker-compose.yml
