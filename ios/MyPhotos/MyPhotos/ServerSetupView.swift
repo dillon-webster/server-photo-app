@@ -3,6 +3,7 @@ import SwiftUI
 struct ServerSetupView: View {
     @AppStorage("serverURL") private var serverURL: String = ""
     @State private var input = ""
+    @State private var password = ""
     @State private var checking = false
     @State private var error: String?
 
@@ -28,6 +29,10 @@ struct ServerSetupView: View {
                     .keyboardType(.URL)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .onSubmit { Task { await connect() } }
+
+                SecureField("Password (if required)", text: $password)
+                    .textFieldStyle(.roundedBorder)
                     .onSubmit { Task { await connect() } }
 
                 if let err = error {
@@ -67,13 +72,21 @@ struct ServerSetupView: View {
 
         checking = true
         error = nil
+        APIClient.shared.pendingBaseURL = url
 
-        UserDefaults.standard.set(url, forKey: "serverURL")
         do {
+            let trimmedPassword = password.trimmingCharacters(in: .whitespaces)
+            if !trimmedPassword.isEmpty {
+                try await APIClient.shared.login(password: trimmedPassword)
+            }
             _ = try await APIClient.shared.albums()
+            APIClient.shared.pendingBaseURL = nil
             serverURL = url
+        } catch let urlError as URLError where urlError.code == .userAuthenticationRequired {
+            APIClient.shared.pendingBaseURL = nil
+            self.error = "Wrong password or server requires one."
         } catch {
-            UserDefaults.standard.removeObject(forKey: "serverURL")
+            APIClient.shared.pendingBaseURL = nil
             self.error = "Couldn't connect. Check the address and try again."
         }
 

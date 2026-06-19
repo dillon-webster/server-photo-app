@@ -1,10 +1,3 @@
-//
-//  MyPhotosApp.swift
-//  MyPhotos
-//
-//  Created by Dillon Webster on 6/18/26.
-//
-
 import SwiftUI
 
 @main
@@ -23,6 +16,9 @@ struct MyPhotosApp: App {
                         .tabItem { Label("Map", systemImage: "map") }
                     AlbumsView()
                         .tabItem { Label("Albums", systemImage: "rectangle.stack") }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .unauthorized)) { _ in
+                    serverURL = ""
                 }
             }
         }
