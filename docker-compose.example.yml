@@ -6,9 +6,11 @@ services:
     ports:
       - "3002:3001"
     volumes:
-      - /mnt/media/photos:/mnt/media/photos
+      - /path/to/your/photos:/mnt/media/photos
       - ./data:/app/data
     environment:
       - UPLOADS_DIR=/mnt/media/photos
       - DB_PATH=/app/data/photos.db
       - PORT=3001
+      - AUTH_PASSWORD=yourpasswordhere
+      - JWT_SECRET=yoursecrethere
