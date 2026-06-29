@@ -13,6 +13,7 @@ function useIsMobile() {
 import type { Photo } from "../types";
 import { thumbnailUrl } from "../api";
 import { Lightbox } from "./Lightbox";
+import { RevealImage } from "./RevealImage";
 
 function formatDuration(ms: number): string {
   const secs = Math.round(ms / 1000);
@@ -48,7 +49,7 @@ export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize =
           return (
             <div
               key={photo.id}
-              className="relative aspect-square overflow-hidden cursor-pointer group"
+              className="relative aspect-square overflow-hidden cursor-pointer group tap bg-white/[0.03]"
               onClick={() => {
                 if (selectable) {
                   onSelect?.(photo.id);
@@ -57,10 +58,10 @@ export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize =
                 }
               }}
             >
-              <img
+              <RevealImage
                 src={thumbnailUrl(photo)}
                 alt={photo.originalName}
-                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                className="w-full h-full object-cover group-hover:scale-105"
                 loading="lazy"
               />
               {photo.mimeType.startsWith("video/") && (
@@ -80,10 +81,10 @@ export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize =
                 </>
               )}
               {selectable && (
-                <div className={`absolute inset-0 transition-colors ${isSelected ? "bg-blue-500/40" : "bg-transparent group-hover:bg-white/10"}`}>
-                  <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-blue-500 border-blue-500" : "border-white/70 bg-black/20"}`}>
+                <div className={`absolute inset-0 transition-colors duration-200 ${isSelected ? "bg-accent/40" : "bg-transparent group-hover:bg-white/10"}`}>
+                  <div className={`absolute top-2 left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${isSelected ? "bg-accent border-accent scale-110" : "border-white/70 bg-black/20"}`}>
                     {isSelected && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 text-white animate-pop" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}

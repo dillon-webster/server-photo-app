@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { NavBar } from "./components/NavBar";
 import { BottomTabBar } from "./components/BottomTabBar";
 import { TimelinePage } from "./pages/TimelinePage";
@@ -11,6 +11,7 @@ import { getToken } from "./api";
 
 export default function App() {
   const [authed, setAuthed] = useState(() => !!getToken());
+  const location = useLocation();
 
   if (!authed) {
     return <LoginPage onLogin={() => setAuthed(true)} />;
@@ -27,12 +28,14 @@ export default function App() {
         style={{ height: "env(safe-area-inset-top)" }}
       />
       <NavBar onLogout={() => setAuthed(false)} />
-      <Routes>
-        <Route path="/" element={<TimelinePage />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/albums" element={<AlbumsPage />} />
-        <Route path="/albums/:id" element={<AlbumDetailPage />} />
-      </Routes>
+      <div key={location.pathname} className="animate-fade-in">
+        <Routes location={location}>
+          <Route path="/" element={<TimelinePage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/albums" element={<AlbumsPage />} />
+          <Route path="/albums/:id" element={<AlbumDetailPage />} />
+        </Routes>
+      </div>
       <BottomTabBar />
     </div>
   );

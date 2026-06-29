@@ -5,7 +5,7 @@ import { clearToken } from "../api";
 export function NavBar({ onLogout }: { onLogout?: () => void }) {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-1.5 rounded-lg text-sm transition-colors ${
-      isActive ? "bg-white/15 text-white" : "text-white/50 hover:text-white hover:bg-white/10"
+      isActive ? "bg-accent/15 text-accent-bright font-medium" : "text-white/50 hover:text-white hover:bg-white/10"
     }`;
 
   return (

@@ -106,19 +106,26 @@ export function TimelinePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-white/30">
-        Loading…
+      <div className="pt-6 px-5 animate-fade-in">
+        <div className="h-3 w-16 rounded-full skeleton mb-4" />
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-px sm:gap-1">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div key={i} className="aspect-square skeleton" style={{ animationDelay: `${(i % 6) * 80}ms` }} />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!data?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-white/40 gap-3">
-        <svg className="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <p className="text-sm">No photos yet — drag &amp; drop or click &ldquo;Add photos&rdquo;</p>
+      <div className="flex flex-col items-center justify-center h-[60vh] text-white/40 gap-4 animate-slide-up px-6 text-center">
+        <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center">
+          <svg className="w-10 h-10 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p className="text-sm max-w-[15rem] leading-relaxed">No photos yet — drag &amp; drop or tap &ldquo;Add photos&rdquo; to get started</p>
       </div>
     );
   }
@@ -130,12 +137,12 @@ export function TimelinePage() {
           key={yearGroup.year}
           ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
         >
-          <h2 className="year-header-sticky text-xs font-semibold text-white/40 px-5 pt-6 pb-1 bg-neutral-900/95 backdrop-blur-sm z-10 tracking-widest uppercase">
+          <h2 className="year-header-sticky text-[11px] font-bold text-accent-bright/80 px-5 pt-6 pb-1.5 bg-neutral-900/80 backdrop-blur-md z-10 tracking-[0.18em] uppercase">
             {yearGroup.year}
           </h2>
           {yearGroup.months.map((monthGroup) => (
             <div key={monthGroup.month}>
-              <h3 className="text-base font-semibold text-white/70 px-5 pt-4 pb-2">
+              <h3 className="text-xl font-bold text-white tracking-tight px-5 pt-4 pb-2.5">
                 {monthGroup.month}
               </h3>
               <PhotoGrid photos={monthGroup.photos} columnSize={deferredColumnSize} />

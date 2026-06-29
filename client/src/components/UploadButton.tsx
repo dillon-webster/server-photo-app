@@ -147,7 +147,7 @@ export function UploadButton() {
 
       <button
         onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-bright text-white text-sm font-medium transition-colors tap"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -156,8 +156,8 @@ export function UploadButton() {
       </button>
 
       {missingDateIds.length > 0 && (
-        <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl">
+        <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl animate-scale-in">
             <h2 className="text-white text-lg font-medium">Date needed</h2>
             <p className="mt-1 text-sm text-white/50">
               {missingDateIds.length} uploaded item{missingDateIds.length === 1 ? "" : "s"} had no Apple date.
@@ -185,7 +185,7 @@ export function UploadButton() {
                 type="button"
                 onClick={() => void saveMissingDates()}
                 disabled={!fallbackDate || savingDate}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-bright disabled:opacity-40 tap"
               >
                 {savingDate ? "Saving..." : "Save date"}
               </button>
@@ -196,14 +196,14 @@ export function UploadButton() {
 
       {/* Drag overlay */}
       {dragging && (
-        <div className="fixed inset-0 z-50 bg-blue-500/20 border-4 border-dashed border-blue-400 flex items-center justify-center pointer-events-none">
-          <div className="text-white text-2xl font-medium">Drop photos & videos to upload</div>
+        <div className="fixed inset-0 z-50 bg-accent/20 border-4 border-dashed border-accent-bright flex items-center justify-center pointer-events-none animate-fade-in">
+          <div className="text-white text-2xl font-medium animate-scale-in">Drop photos &amp; videos to upload</div>
         </div>
       )}
 
       {/* Upload progress toast */}
       {uploads.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-40 bg-neutral-800 rounded-xl shadow-2xl p-4 w-72 space-y-2">
+        <div className="fixed bottom-4 right-4 z-40 bg-neutral-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-4 w-72 space-y-2 animate-slide-up">
           <p className="text-white/60 text-xs font-medium mb-2">Uploading {uploads.length} item{uploads.length !== 1 ? "s" : ""}…</p>
           {uploads.map((u, i) => (
             <div key={i}>
@@ -218,7 +218,7 @@ export function UploadButton() {
               )}
               <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${u.error ? "bg-red-400" : "bg-blue-400"}`}
+                  className={`h-full rounded-full transition-all ${u.error ? "bg-red-400" : "bg-accent-bright"}`}
                   style={{ width: `${Math.round((u.loaded / u.total) * 100)}%` }}
                 />
               </div>
