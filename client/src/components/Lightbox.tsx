@@ -22,12 +22,19 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const [livePhoto, setLivePhoto] = useState<Photo | null>(null);
   const photo = livePhoto ?? photos[index];
   const queryClient = useQueryClient();
+  const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [editDate, setEditDate] = useState("");
   const [editLocationSearch, setEditLocationSearch] = useState("");
+
+  // Play the exit animation, then unmount via the parent's onClose.
+  const requestClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(onClose, 190);
+  }, [onClose]);
 
   const prev = useCallback(() => {
     if (index > 0) { setEditing(false); setLivePhoto(null); onNavigate(index - 1); }
@@ -98,14 +105,14 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") requestClose();
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
       if (e.key === "Delete" || e.key === "Backspace") handleDelete();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose, prev, next, handleDelete]);
+  }, [requestClose, prev, next, handleDelete]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -115,6 +122,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
   const swipeHandlers = useSwipeable({
     onSwipedLeft: next,
     onSwipedRight: prev,
+    onSwipedDown: requestClose,
     preventScrollOnSwipe: true,
     trackMouse: true,
   });
@@ -127,14 +135,14 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
 
   return (
     <div
-      className={`fixed inset-0 ${LIGHTBOX_LAYER_CLASS} bg-black/95 flex flex-col`}
+      className={`fixed inset-0 ${LIGHTBOX_LAYER_CLASS} bg-black/95 flex flex-col ${closing ? "animate-lightbox-out" : "animate-lightbox-in"}`}
       {...swipeHandlers}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
-          onClick={onClose}
-          className="text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+          onClick={requestClose}
+          className="text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors tap"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -146,7 +154,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="text-white/40 hover:text-red-400 disabled:opacity-30 p-2 rounded-full hover:bg-white/10 transition-colors"
+          className="text-white/40 hover:text-red-400 disabled:opacity-30 p-2 rounded-full hover:bg-white/10 transition-colors tap"
           title="Delete photo"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +164,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       </div>
 
       {/* Image */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+      <div
+        className="flex-1 flex items-center justify-center relative overflow-hidden"
+        onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
+      >
         {index > 0 && (
           <button
             onClick={prev}
@@ -175,7 +186,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
             key={photo.id}
             src={originalUrl(photo)}
             alt={photo.originalName}
-            className="max-w-full max-h-full object-contain select-none"
+            className="max-w-full max-h-full object-contain select-none animate-fade-in"
             draggable={false}
           />
         )}
@@ -238,7 +249,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="text-white text-sm px-4 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg transition-colors disabled:opacity-40"
+                className="text-white text-sm font-medium px-4 py-1.5 bg-accent hover:bg-accent-bright rounded-lg transition-colors disabled:opacity-40 tap"
               >
                 {saving ? "Saving…" : "Save"}
               </button>

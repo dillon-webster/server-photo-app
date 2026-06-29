@@ -65,7 +65,7 @@ export function AlbumDetailPage() {
         <h1 className="text-lg font-semibold text-white flex-1">{album.name}</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white text-sm transition-colors tap"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -87,7 +87,7 @@ export function AlbumDetailPage() {
           <p>No photos in this album yet</p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-accent-bright hover:text-accent transition-colors tap"
           >
             Add some photos
           </button>
@@ -98,7 +98,7 @@ export function AlbumDetailPage() {
 
       {/* Add photos modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-40 bg-black/80 flex flex-col">
+        <div className="fixed inset-0 z-40 bg-black/80 flex flex-col animate-fade-in">
           <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-white/10 shrink-0">
             <button
               onClick={() => { setShowAddModal(false); setSelected(new Set()); }}
@@ -112,7 +112,7 @@ export function AlbumDetailPage() {
             <button
               disabled={selected.size === 0 || addMutation.isPending}
               onClick={() => addMutation.mutate(Array.from(selected))}
-              className="text-blue-400 hover:text-blue-300 disabled:opacity-40 text-sm font-medium transition-colors"
+              className="text-accent-bright hover:text-accent disabled:opacity-40 text-sm font-medium transition-colors tap"
             >
               Add
             </button>
