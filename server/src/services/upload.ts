@@ -145,6 +145,7 @@ export async function processUpload(
   originalName: string,
   mimeType: string,
   fallbackDate: number | null = null,
+  ownerId: string | null = null,
 ): Promise<Photo> {
   const id = uuidv4();
   const rawExt = extname(originalName).toLowerCase();
@@ -231,6 +232,7 @@ export async function processUpload(
 
     const photo: Photo = {
       id,
+      ownerId,
       filename,
       originalName,
       mimeType,

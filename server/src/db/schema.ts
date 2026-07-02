@@ -1,7 +1,15 @@
 import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
 export const photos = sqliteTable("photos", {
   id: text("id").primaryKey(),
+  ownerId: text("owner_id").references(() => users.id, { onDelete: "cascade" }),
   filename: text("filename").notNull(),
   originalName: text("original_name").notNull(),
   mimeType: text("mime_type").notNull(),
@@ -19,6 +27,7 @@ export const photos = sqliteTable("photos", {
 
 export const albums = sqliteTable("albums", {
   id: text("id").primaryKey(),
+  ownerId: text("owner_id").references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   coverPhotoId: text("cover_photo_id"),
@@ -41,6 +50,7 @@ export const albumPhotos = sqliteTable(
   (t) => ({ pk: primaryKey({ columns: [t.albumId, t.photoId] }) })
 );
 
+export type User = typeof users.$inferSelect;
 export type Photo = typeof photos.$inferSelect;
 export type Album = typeof albums.$inferSelect;
 export type AlbumPhoto = typeof albumPhotos.$inferSelect;

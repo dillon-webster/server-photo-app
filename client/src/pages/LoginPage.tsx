@@ -2,23 +2,40 @@ import { useState } from "react";
 import { api, setToken } from "../api";
 
 export function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const isRegister = mode === "register";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const { token } = await api.auth.login(password);
+      const { token } = isRegister
+        ? await api.auth.register(username, password)
+        : await api.auth.login(username, password);
       setToken(token);
       onLogin();
-    } catch {
-      setError("Incorrect password");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : isRegister
+            ? "Could not create account"
+            : "Incorrect username or password"
+      );
     } finally {
       setLoading(false);
     }
+  }
+
+  function switchMode() {
+    setMode(isRegister ? "login" : "register");
+    setError("");
   }
 
   return (
@@ -36,20 +53,43 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
           <h1 className="text-white text-2xl font-bold tracking-tight">Photos</h1>
         </div>
         <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoFocus
+          autoCapitalize="none"
+          autoCorrect="off"
+          className="bg-neutral-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-accent/50 transition-shadow"
+        />
+        <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoFocus
+          autoComplete={isRegister ? "new-password" : "current-password"}
           className="bg-neutral-800 text-white rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-accent/50 transition-shadow"
         />
         {error && <p className="text-red-400 text-sm text-center animate-fade-in">{error}</p>}
         <button
           type="submit"
-          disabled={loading || !password}
+          disabled={loading || !username || !password}
           className="bg-accent hover:bg-accent-bright text-white font-medium rounded-xl px-4 py-3 disabled:opacity-40 cursor-pointer transition-colors tap"
         >
-          {loading ? "Signing in…" : "Sign in"}
+          {loading
+            ? isRegister
+              ? "Creating account…"
+              : "Signing in…"
+            : isRegister
+              ? "Create account"
+              : "Sign in"}
+        </button>
+        <button
+          type="button"
+          onClick={switchMode}
+          className="text-neutral-400 hover:text-white text-sm text-center transition-colors cursor-pointer"
+        >
+          {isRegister ? "Already have an account? Sign in" : "No account? Create one"}
         </button>
       </form>
     </div>

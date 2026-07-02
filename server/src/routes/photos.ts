@@ -5,6 +5,7 @@ import { join } from "path";
 import { db } from "../db/client.js";
 import { albums, photos } from "../db/schema.js";
 import { forwardGeocode, reverseGeocode } from "../services/geocode.js";
+import { requireUserId } from "../services/currentUser.js";
 import { normalizePhotoDate } from "./photoDate.js";
 
 interface PhotoPatch {
@@ -25,10 +26,13 @@ const MONTHS = [
 
 export async function photoRoutes(app: FastifyInstance) {
   // Timeline: grouped by year → month
-  app.get("/api/photos/timeline", async () => {
+  app.get("/api/photos/timeline", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
     const rows = db
       .select()
       .from(photos)
+      .where(eq(photos.ownerId, userId))
       .orderBy(photos.dateTaken)
       .all();
 
@@ -61,24 +65,38 @@ export async function photoRoutes(app: FastifyInstance) {
   });
 
   // Map: only photos with GPS
-  app.get("/api/photos/map", async () => {
+  app.get("/api/photos/map", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
     return db
       .select()
       .from(photos)
-      .where(and(isNotNull(photos.latitude), isNotNull(photos.longitude)))
+      .where(and(eq(photos.ownerId, userId), isNotNull(photos.latitude), isNotNull(photos.longitude)))
       .all();
   });
 
   // Single photo metadata
   app.get<{ Params: { id: string } }>("/api/photos/:id", async (req, reply) => {
-    const photo = db.select().from(photos).where(eq(photos.id, req.params.id)).get();
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
+    const photo = db
+      .select()
+      .from(photos)
+      .where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId)))
+      .get();
     if (!photo) return reply.status(404).send({ error: "Not found" });
     return photo;
   });
 
   // Update photo metadata (date, location)
   app.patch<{ Params: { id: string }; Body: PhotoPatch }>("/api/photos/:id", async (req, reply) => {
-    const photo = db.select().from(photos).where(eq(photos.id, req.params.id)).get();
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
+    const photo = db
+      .select()
+      .from(photos)
+      .where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId)))
+      .get();
     if (!photo) return reply.status(404).send({ error: "Not found" });
 
     const body = req.body;
@@ -124,20 +142,33 @@ export async function photoRoutes(app: FastifyInstance) {
       }
     }
 
-    db.update(photos).set(patch).where(eq(photos.id, req.params.id)).run();
-    return db.select().from(photos).where(eq(photos.id, req.params.id)).get();
+    db.update(photos)
+      .set(patch)
+      .where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId)))
+      .run();
+    return db
+      .select()
+      .from(photos)
+      .where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId)))
+      .get();
   });
 
   // Delete photo
   app.delete<{ Params: { id: string } }>("/api/photos/:id", async (req, reply) => {
-    const photo = db.select().from(photos).where(eq(photos.id, req.params.id)).get();
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
+    const photo = db
+      .select()
+      .from(photos)
+      .where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId)))
+      .get();
     if (!photo) return reply.status(404).send({ error: "Not found" });
 
-    db.delete(photos).where(eq(photos.id, req.params.id)).run();
+    db.delete(photos).where(and(eq(photos.id, req.params.id), eq(photos.ownerId, userId))).run();
 
     db.update(albums)
       .set({ coverPhotoId: null, updatedAt: Date.now() })
-      .where(eq(albums.coverPhotoId, req.params.id))
+      .where(and(eq(albums.coverPhotoId, req.params.id), eq(albums.ownerId, userId)))
       .run();
 
     const unlinkResults = await Promise.allSettled([

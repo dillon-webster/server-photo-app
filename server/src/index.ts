@@ -26,18 +26,21 @@ const app = Fastify({ logger: { transport: { target: "pino-pretty" } } });
 
 await app.register(cors, { origin: true });
 
-const authEnabled = !!process.env.AUTH_PASSWORD;
+const PUBLIC_API_ROUTES = new Set(["/api/auth/login", "/api/auth/register"]);
+const authEnabled = !!process.env.JWT_SECRET;
 if (authEnabled) {
-  await app.register(jwt, { secret: process.env.JWT_SECRET ?? process.env.AUTH_PASSWORD! });
+  await app.register(jwt, { secret: process.env.JWT_SECRET! });
   app.addHook("preHandler", async (req, reply) => {
-    if (req.url === "/api/auth/login") return;
     if (!req.url.startsWith("/api/")) return;
+    if (PUBLIC_API_ROUTES.has(req.url.split("?")[0])) return;
     try {
       await req.jwtVerify();
     } catch {
       reply.status(401).send({ error: "Unauthorized" });
     }
   });
+} else {
+  app.log.warn("JWT_SECRET not set — auth is DISABLED and all data is public. Set JWT_SECRET to enable user accounts.");
 }
 
 await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 500 MB
