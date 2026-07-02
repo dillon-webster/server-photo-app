@@ -12,5 +12,6 @@ services:
       - UPLOADS_DIR=/mnt/media/photos
       - DB_PATH=/app/data/photos.db
       - PORT=3001
-      - AUTH_PASSWORD=yourpasswordhere
+      # Enables user accounts + signs login tokens. Use a long random string
+      # (e.g. `openssl rand -hex 32`). Each person registers their own account.
       - JWT_SECRET=yoursecrethere

@@ -34,11 +34,17 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   auth: {
-    login: (password: string) =>
-      request<{ token: string }>("/api/auth/login", {
+    login: (username: string, password: string) =>
+      request<{ token: string; username: string }>("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
+      }),
+    register: (username: string, password: string) =>
+      request<{ token: string; username: string }>("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       }),
   },
 

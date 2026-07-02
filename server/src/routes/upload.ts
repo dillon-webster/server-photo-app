@@ -1,10 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { processUpload } from "../services/upload.js";
 import { parseUploadDateFallback } from "../services/uploadDateFallback.js";
+import { requireUserId } from "../services/currentUser.js";
 import { uploadErrorMessage } from "./uploadError.js";
 
 export async function uploadRoutes(app: FastifyInstance) {
   app.post("/api/upload", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (!userId) return;
     const parts = req.parts();
     const results = [];
     let rawFallbackDate: unknown;
@@ -30,6 +33,7 @@ export async function uploadRoutes(app: FastifyInstance) {
           part.filename,
           part.mimetype,
           fallbackDate,
+          userId,
         );
         results.push({ filename: part.filename, ok: true, photo });
       } catch (err) {

@@ -1,5 +1,6 @@
 export interface Photo {
   id: string;
+  ownerId?: string | null;
   filename: string;
   originalName: string;
   mimeType: string;
