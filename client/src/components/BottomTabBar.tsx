@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useSelection } from "./SelectionContext";
 
 interface Tab {
   to: string;
@@ -46,7 +47,11 @@ function activeIndex(pathname: string): number {
 
 export function BottomTabBar() {
   const { pathname } = useLocation();
+  const { selecting } = useSelection();
   const idx = activeIndex(pathname);
+
+  // While selecting photos, the selection action bar takes the bottom slot.
+  if (selecting) return null;
 
   return (
     <nav
