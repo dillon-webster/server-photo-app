@@ -1,12 +1,31 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { UploadButton } from "./UploadButton";
+import { useSelection } from "./SelectionContext";
 import { clearToken } from "../api";
 
 export function NavBar({ onLogout }: { onLogout?: () => void }) {
+  const { pathname } = useLocation();
+  const { selecting, start, cancel } = useSelection();
+  // Selecting photos only makes sense on the timeline.
+  const onTimeline = pathname === "/";
+
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-1.5 rounded-lg text-sm transition-colors ${
       isActive ? "bg-accent/15 text-accent-bright font-medium" : "text-white/50 hover:text-white hover:bg-white/10"
     }`;
+
+  const selectButton = onTimeline && (
+    <button
+      onClick={() => (selecting ? cancel() : start())}
+      className={`text-sm px-3 py-1.5 rounded-lg transition-colors tap ${
+        selecting
+          ? "text-accent-bright bg-accent/15 font-medium"
+          : "text-white/50 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {selecting ? "Cancel" : "Select"}
+    </button>
+  );
 
   const signOutButton = onLogout && (
     <button
@@ -33,6 +52,7 @@ export function NavBar({ onLogout }: { onLogout?: () => void }) {
           Albums
         </NavLink>
         <div className="ml-auto flex items-center gap-2">
+          {selectButton}
           <UploadButton />
           {signOutButton}
         </div>
@@ -46,6 +66,7 @@ export function NavBar({ onLogout }: { onLogout?: () => void }) {
       >
         <span className="text-white font-semibold text-base tracking-tight">Photos</span>
         <div className="ml-auto flex items-center gap-1">
+          {selectButton}
           <UploadButton />
           {signOutButton}
         </div>
