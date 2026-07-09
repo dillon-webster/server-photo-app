@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
+import { Portal } from "./Portal";
 import { missingDatePhotoIds, uploadResultError } from "../uploadResult";
 import { dateInputToTimestamp } from "./photoDate";
 
@@ -155,6 +156,7 @@ export function UploadButton() {
         <span className="hidden sm:inline">Add photos</span>
       </button>
 
+      <Portal>
       {missingDateIds.length > 0 && (
         <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl animate-scale-in">
@@ -226,6 +228,7 @@ export function UploadButton() {
           ))}
         </div>
       )}
+      </Portal>
     </>
   );
 }
