@@ -139,7 +139,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       {...swipeHandlers}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0">
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
         <button
           onClick={requestClose}
           className="text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors tap"
@@ -204,7 +207,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 shrink-0 text-center">
+      <div
+        className="px-4 py-3 shrink-0 text-center"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
         {editing ? (
           <div className="flex flex-col gap-2 w-64 mx-auto">
             <div className="flex flex-col gap-1">
