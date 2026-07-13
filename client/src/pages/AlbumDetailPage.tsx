@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { PhotoGrid } from "../components/PhotoGrid";
+import { ConfirmSheet } from "../components/ConfirmSheet";
 import { useUpload } from "../components/useUpload";
 import { UploadOverlays } from "../components/UploadOverlays";
 import type { Photo } from "../types";
@@ -24,6 +25,7 @@ export function AlbumDetailPage() {
   });
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const addMutation = useMutation({
@@ -92,9 +94,7 @@ export function AlbumDetailPage() {
           Add photos
         </button>
         <button
-          onClick={() => {
-            if (confirm(`Delete album "${album.name}"?`)) deleteMutation.mutate();
-          }}
+          onClick={() => setShowDeleteSheet(true)}
           className="px-3 py-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 text-sm transition-colors"
         >
           Delete
@@ -112,7 +112,22 @@ export function AlbumDetailPage() {
           </button>
         </div>
       ) : (
-        <PhotoGrid photos={album.photos} />
+        <PhotoGrid photos={album.photos} albumId={id} />
+      )}
+
+      {showDeleteSheet && (
+        <ConfirmSheet
+          title={`Delete album "${album.name}"?`}
+          message="Photos in the album stay in your library."
+          actions={[
+            {
+              label: "Delete Album",
+              danger: true,
+              onClick: () => { setShowDeleteSheet(false); deleteMutation.mutate(); },
+            },
+          ]}
+          onCancel={() => setShowDeleteSheet(false)}
+        />
       )}
 
       {/* Add photos modal */}
