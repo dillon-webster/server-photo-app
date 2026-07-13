@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { PhotoGrid } from "../components/PhotoGrid";
+import { ConfirmSheet } from "../components/ConfirmSheet";
 import { Portal } from "../components/Portal";
+import { useUpload } from "../components/useUpload";
+import { UploadOverlays } from "../components/UploadOverlays";
 import type { Photo } from "../types";
 
 export function AlbumDetailPage() {
@@ -23,6 +26,7 @@ export function AlbumDetailPage() {
   });
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const addMutation = useMutation({
@@ -42,6 +46,23 @@ export function AlbumDetailPage() {
       navigate("/albums");
     },
   });
+
+  // Upload from device straight into this album
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const upload = useUpload(
+    useCallback(
+      async (photoIds: string[]) => {
+        if (!photoIds.length) return;
+        await api.albums.addPhotos(id!, photoIds);
+        queryClient.invalidateQueries({ queryKey: ["album", id] });
+        queryClient.invalidateQueries({ queryKey: ["albums"] });
+        setShowAddModal(false);
+        setSelected(new Set());
+      },
+      [id, queryClient]
+    )
+  );
+  const uploading = upload.uploads.some((u) => !u.done && !u.error);
 
   if (isLoading || !album) {
     return <div className="flex items-center justify-center h-64 text-white/30">Loading…</div>;
@@ -74,9 +95,7 @@ export function AlbumDetailPage() {
           Add photos
         </button>
         <button
-          onClick={() => {
-            if (confirm(`Delete album "${album.name}"?`)) deleteMutation.mutate();
-          }}
+          onClick={() => setShowDeleteSheet(true)}
           className="px-3 py-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-400/10 text-sm transition-colors"
         >
           Delete
@@ -94,14 +113,32 @@ export function AlbumDetailPage() {
           </button>
         </div>
       ) : (
-        <PhotoGrid photos={album.photos} />
+        <PhotoGrid photos={album.photos} albumId={id} />
+      )}
+
+      {showDeleteSheet && (
+        <ConfirmSheet
+          title={`Delete album "${album.name}"?`}
+          message="Photos in the album stay in your library."
+          actions={[
+            {
+              label: "Delete Album",
+              danger: true,
+              onClick: () => { setShowDeleteSheet(false); deleteMutation.mutate(); },
+            },
+          ]}
+          onCancel={() => setShowDeleteSheet(false)}
+        />
       )}
 
       {/* Add photos modal */}
       {showAddModal && (
         <Portal>
         <div className="fixed inset-0 z-[1000] bg-black/80 flex flex-col animate-fade-in">
-          <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-white/10 shrink-0">
+          <div
+            className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-white/10 shrink-0"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+          >
             <button
               onClick={() => { setShowAddModal(false); setSelected(new Set()); }}
               className="text-white/40 hover:text-white transition-colors"
@@ -117,6 +154,18 @@ export function AlbumDetailPage() {
               className="text-accent-bright hover:text-accent disabled:opacity-40 text-sm font-medium transition-colors tap"
             >
               Add
+            </button>
+          </div>
+          <div className="px-4 py-3 bg-neutral-900 border-b border-white/10 shrink-0">
+            <button
+              onClick={() => uploadInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white disabled:opacity-40 text-sm transition-colors tap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 16V4m0 0L8 8m4-4l4 4" />
+              </svg>
+              {uploading ? "Uploading…" : "Upload from this device"}
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -140,6 +189,19 @@ export function AlbumDetailPage() {
         </div>
         </Portal>
       )}
+
+      <input
+        ref={uploadInputRef}
+        type="file"
+        multiple
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={(e) => {
+          upload.stageFiles(Array.from(e.target.files ?? []));
+          e.target.value = "";
+        }}
+      />
+      <UploadOverlays upload={upload} />
     </div>
   );
 }

@@ -76,7 +76,10 @@ body {
 }
 
 /* ---- Animation utilities --------------------------------------------- */
-.animate-fade-in { animation: fade-in 0.3s ease both; }
+/* fill-mode "backwards" (not "both"): a filling opacity animation keeps a
+   permanent stacking context, which traps fixed overlays inside the route
+   wrapper below the sticky navbar */
+.animate-fade-in { animation: fade-in 0.3s ease backwards; }
 .animate-scale-in { animation: scale-in 0.26s var(--ease-out-expo) both; }
 .animate-slide-up { animation: slide-up 0.32s var(--ease-out-expo) both; }
 .animate-lightbox-in { animation: lightbox-in 0.24s var(--ease-out-expo) both; }

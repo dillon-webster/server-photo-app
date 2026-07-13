@@ -73,11 +73,17 @@ export function MapPicker({ initialLat, initialLon, onConfirm, onCancel }: Props
         )}
       </MapContainer>
 
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[2001] bg-black/70 text-white text-sm px-4 py-2 rounded-full pointer-events-none select-none">
+      <div
+        className="absolute left-1/2 -translate-x-1/2 z-[2001] bg-black/70 text-white text-sm px-4 py-2 rounded-full pointer-events-none select-none"
+        style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}
+      >
         {pin ? "Drag the pin to adjust" : "Tap anywhere to place a pin"}
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2001] flex gap-3 items-center">
+      <div
+        className="absolute left-1/2 -translate-x-1/2 z-[2001] flex gap-3 items-center"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 2rem)" }}
+      >
         {saveError && (
           <p className="absolute bottom-full mb-3 whitespace-nowrap rounded-lg bg-red-950/90 px-3 py-2 text-sm text-red-200">
             {saveError}

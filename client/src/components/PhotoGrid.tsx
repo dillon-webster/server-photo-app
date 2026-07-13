@@ -28,9 +28,11 @@ interface Props {
   selected?: Set<string>;
   onSelect?: (id: string) => void;
   columnSize?: number;
+  /** Album these photos are shown from — enables "Remove from Album" in the lightbox. */
+  albumId?: string;
 }
 
-export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize = 220 }: Props) {
+export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize = 220, albumId }: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const isMobile = useIsMobile();
 
@@ -102,6 +104,7 @@ export function PhotoGrid({ photos, selectable, selected, onSelect, columnSize =
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
+          albumId={albumId}
         />
       )}
     </>

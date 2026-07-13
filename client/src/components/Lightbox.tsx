@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import type { Photo } from "../types";
 import { originalUrl, api } from "../api";
 import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
+import { ConfirmSheet, type SheetAction } from "./ConfirmSheet";
 import { MapPicker } from "./MapPicker";
 import { Portal } from "./Portal";
 import { dateInputToTimestamp, timestampToDateInput } from "./photoDate";
@@ -17,14 +18,17 @@ interface Props {
   index: number;
   onClose: () => void;
   onNavigate: (index: number) => void;
+  /** When set, the photo can also be removed from this album (not just deleted). */
+  albumId?: string;
 }
 
-export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
+export function Lightbox({ photos, index, onClose, onNavigate, albumId }: Props) {
   const [livePhoto, setLivePhoto] = useState<Photo | null>(null);
   const photo = livePhoto ?? photos[index];
   const queryClient = useQueryClient();
   const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -81,26 +85,46 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
     setEditing(false);
   }, [photo.id, queryClient]);
 
-  const handleDelete = useCallback(async () => {
-    if (!photo || !confirm(`Delete "${photo.originalName}"? This can't be undone.`)) return;
+  // Navigate to next photo, or prev if this was the last, or close
+  const leaveRemovedPhoto = useCallback(() => {
+    setLivePhoto(null);
+    if (photos.length === 1) {
+      onClose();
+    } else if (index < photos.length - 1) {
+      onNavigate(index); // same index now points to next photo after re-render
+    } else {
+      onNavigate(index - 1);
+    }
+  }, [index, photos.length, onClose, onNavigate]);
+
+  const performDelete = useCallback(async () => {
+    if (!photo || deleting) return;
     setDeleting(true);
     try {
       await api.photos.delete(photo.id);
       queryClient.invalidateQueries({ queryKey: ["timeline"] });
       queryClient.invalidateQueries({ queryKey: ["map-photos"] });
       queryClient.invalidateQueries({ queryKey: ["album"] });
-      // Navigate to next photo, or prev if this was the last, or close
-      if (photos.length === 1) {
-        onClose();
-      } else if (index < photos.length - 1) {
-        onNavigate(index); // same index now points to next photo after re-render
-      } else {
-        onNavigate(index - 1);
-      }
+      setShowDeleteSheet(false);
+      leaveRemovedPhoto();
     } finally {
       setDeleting(false);
     }
-  }, [photo, index, photos.length, onClose, onNavigate, queryClient]);
+  }, [photo, deleting, leaveRemovedPhoto, queryClient]);
+
+  const performRemoveFromAlbum = useCallback(async () => {
+    if (!photo || !albumId || deleting) return;
+    setDeleting(true);
+    try {
+      await api.albums.removePhoto(albumId, photo.id);
+      queryClient.invalidateQueries({ queryKey: ["album"] });
+      queryClient.invalidateQueries({ queryKey: ["albums"] });
+      setShowDeleteSheet(false);
+      leaveRemovedPhoto();
+    } finally {
+      setDeleting(false);
+    }
+  }, [photo, albumId, deleting, leaveRemovedPhoto, queryClient]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -109,11 +133,11 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       if (e.key === "Escape") requestClose();
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
-      if (e.key === "Delete" || e.key === "Backspace") handleDelete();
+      if (e.key === "Delete" || e.key === "Backspace") setShowDeleteSheet(true);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [requestClose, prev, next, handleDelete]);
+  }, [requestClose, prev, next]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -141,7 +165,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       {...swipeHandlers}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0">
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
         <button
           onClick={requestClose}
           className="text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors tap"
@@ -154,7 +181,7 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
           {index + 1} / {photos.length}
         </span>
         <button
-          onClick={handleDelete}
+          onClick={() => setShowDeleteSheet(true)}
           disabled={deleting}
           className="text-white/40 hover:text-red-400 disabled:opacity-30 p-2 rounded-full hover:bg-white/10 transition-colors tap"
           title="Delete photo"
@@ -206,7 +233,10 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 shrink-0 text-center">
+      <div
+        className="px-4 py-3 shrink-0 text-center"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
         {editing ? (
           <div className="flex flex-col gap-2 w-64 mx-auto">
             <div className="flex flex-col gap-1">
@@ -276,6 +306,24 @@ export function Lightbox({ photos, index, onClose, onNavigate }: Props) {
           </>
         )}
       </div>
+
+      {showDeleteSheet && (
+        <ConfirmSheet
+          title={albumId ? "Remove this photo?" : `Delete "${photo.originalName}"?`}
+          message={
+            albumId
+              ? "Removing from the album keeps the photo in your library."
+              : "This can't be undone."
+          }
+          actions={[
+            ...(albumId
+              ? [{ label: "Remove from Album", onClick: () => void performRemoveFromAlbum() } satisfies SheetAction]
+              : []),
+            { label: "Delete from Library", danger: true, onClick: () => void performDelete() },
+          ]}
+          onCancel={() => setShowDeleteSheet(false)}
+        />
+      )}
 
       {showMapPicker && (
         <MapPicker
