@@ -1,3 +1,4 @@
+import { Portal } from "./Portal";
 import type { UploadController } from "./useUpload";
 
 /** Missing-date modal + upload progress toast for a useUpload controller. */
@@ -13,7 +14,7 @@ export function UploadOverlays({ upload }: { upload: UploadController }) {
   } = upload;
 
   return (
-    <>
+    <Portal>
       {missingDateIds.length > 0 && (
         <div className="fixed inset-0 z-[2100] bg-black/75 flex items-center justify-center p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl bg-neutral-900 border border-white/10 p-5 shadow-2xl animate-scale-in">
@@ -81,6 +82,6 @@ export function UploadOverlays({ upload }: { upload: UploadController }) {
           ))}
         </div>
       )}
-    </>
+    </Portal>
   );
 }

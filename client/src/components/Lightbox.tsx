@@ -7,6 +7,7 @@ import { originalUrl, api } from "../api";
 import { LIGHTBOX_LAYER_CLASS } from "./lightboxLayer";
 import { ConfirmSheet, type SheetAction } from "./ConfirmSheet";
 import { MapPicker } from "./MapPicker";
+import { Portal } from "./Portal";
 import { dateInputToTimestamp, timestampToDateInput } from "./photoDate";
 import { savePhotoLocation } from "./photoLocation";
 import { VideoPlayer } from "./VideoPlayer";
@@ -158,6 +159,7 @@ export function Lightbox({ photos, index, onClose, onNavigate, albumId }: Props)
   const location = [photo.city, photo.country].filter(Boolean).join(", ");
 
   return (
+    <Portal>
     <div
       className={`fixed inset-0 ${LIGHTBOX_LAYER_CLASS} bg-black/95 flex flex-col ${closing ? "animate-lightbox-out" : "animate-lightbox-in"}`}
       {...swipeHandlers}
@@ -332,5 +334,6 @@ export function Lightbox({ photos, index, onClose, onNavigate, albumId }: Props)
         />
       )}
     </div>
+    </Portal>
   );
 }

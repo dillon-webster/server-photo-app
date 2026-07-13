@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api";
 import { PhotoGrid } from "../components/PhotoGrid";
 import { ConfirmSheet } from "../components/ConfirmSheet";
+import { Portal } from "../components/Portal";
 import { useUpload } from "../components/useUpload";
 import { UploadOverlays } from "../components/UploadOverlays";
 import type { Photo } from "../types";
@@ -132,7 +133,8 @@ export function AlbumDetailPage() {
 
       {/* Add photos modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-40 bg-black/80 flex flex-col animate-fade-in">
+        <Portal>
+        <div className="fixed inset-0 z-[1000] bg-black/80 flex flex-col animate-fade-in">
           <div
             className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-white/10 shrink-0"
             style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
@@ -185,6 +187,7 @@ export function AlbumDetailPage() {
             />
           </div>
         </div>
+        </Portal>
       )}
 
       <input

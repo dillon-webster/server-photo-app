@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Portal } from "./Portal";
 
 export interface SheetAction {
   label: string;
@@ -26,6 +27,7 @@ export function ConfirmSheet({ title, message, actions, onCancel }: Props) {
   }, [onCancel]);
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-[2100] bg-black/60 flex items-end sm:items-center justify-center sm:p-4 animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
@@ -59,5 +61,6 @@ export function ConfirmSheet({ title, message, actions, onCancel }: Props) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

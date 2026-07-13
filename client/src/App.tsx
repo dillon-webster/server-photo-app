@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { NavBar } from "./components/NavBar";
 import { BottomTabBar } from "./components/BottomTabBar";
+import { SelectionProvider } from "./components/SelectionContext";
 import { TimelinePage } from "./pages/TimelinePage";
 import { MapPage } from "./pages/MapPage";
 import { AlbumsPage } from "./pages/AlbumsPage";
@@ -18,6 +19,7 @@ export default function App() {
   }
 
   return (
+    <SelectionProvider>
     <div
       className="min-h-screen bg-neutral-900 text-white"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -38,5 +40,6 @@ export default function App() {
       </div>
       <BottomTabBar />
     </div>
+    </SelectionProvider>
   );
 }

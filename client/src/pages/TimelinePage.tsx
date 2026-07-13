@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { PhotoGrid } from "../components/PhotoGrid";
 import { TimelineScrubber, type ScrubberYear } from "../components/TimelineScrubber";
+import { SelectionActionBar } from "../components/SelectionActionBar";
+import { useSelection } from "../components/SelectionContext";
 
 const NAVBAR_H = 56;
 const ZOOM_KEY = "timeline-zoom-px";
@@ -25,6 +27,10 @@ export function TimelinePage() {
     queryKey: ["timeline"],
     queryFn: api.photos.timeline,
   });
+
+  const { selecting, selected, toggle, cancel } = useSelection();
+  // Leaving the timeline exits selection mode so it never lingers.
+  useEffect(() => () => cancel(), [cancel]);
 
   const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const activeSet = useRef(new Set<string>());
@@ -145,7 +151,13 @@ export function TimelinePage() {
               <h3 className="text-xl font-bold text-white tracking-tight px-5 pt-4 pb-2.5">
                 {monthGroup.month}
               </h3>
-              <PhotoGrid photos={monthGroup.photos} columnSize={deferredColumnSize} />
+              <PhotoGrid
+                photos={monthGroup.photos}
+                columnSize={deferredColumnSize}
+                selectable={selecting}
+                selected={selected}
+                onSelect={toggle}
+              />
             </div>
           ))}
         </div>
@@ -173,6 +185,8 @@ export function TimelinePage() {
 
       {/* Spacer for mobile bottom tab bar */}
       <div className="sm:hidden" style={{ height: "calc(4rem + env(safe-area-inset-bottom))" }} />
+
+      <SelectionActionBar />
     </div>
   );
 }
