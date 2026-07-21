@@ -137,19 +137,23 @@ export function TimelinePage() {
   }
 
   return (
-    <div ref={contentRef} className="min-h-screen pb-32 sm:pb-12 pr-10">
+    <div ref={contentRef} className="min-h-screen sm:pb-12 sm:pr-10">
       {data.map((yearGroup) => (
         <div
           key={yearGroup.year}
           ref={(el) => { yearRefs.current[yearGroup.year] = el; }}
         >
-          <h2 className="year-header-sticky text-[11px] font-bold text-accent-bright/80 px-5 pt-6 pb-1.5 bg-neutral-900/80 backdrop-blur-md z-10 tracking-[0.18em] uppercase">
-            {yearGroup.year}
-          </h2>
           {yearGroup.months.map((monthGroup) => (
             <div key={monthGroup.month}>
-              <h3 className="text-xl font-bold text-white tracking-tight px-5 pt-4 pb-2.5">
-                {monthGroup.month}
+              {/* Month and year read as one label — stacking them cost ~90px of
+                  chrome above rows that are often a single photo tall. */}
+              <h3 className="section-header-sticky flex items-baseline gap-1.5 px-4 sm:px-5 pt-5 pb-2 bg-neutral-900/80 backdrop-blur-md z-10">
+                <span className="text-[15px] font-semibold text-white tracking-tight">
+                  {monthGroup.month}
+                </span>
+                <span className="text-[15px] font-medium text-white/35 tracking-tight">
+                  {yearGroup.year}
+                </span>
               </h3>
               <PhotoGrid
                 photos={monthGroup.photos}

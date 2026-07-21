@@ -54,41 +54,51 @@ export function BottomTabBar() {
   if (selecting) return null;
 
   return (
-    <nav
-      className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-900/80 backdrop-blur-2xl border-t border-white/10 flex"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
-      {/* Sliding active pill */}
-      <span
-        className="pointer-events-none absolute top-1.5 left-0 h-9 transition-transform duration-300"
-        style={{
-          width: "calc(100% / 3)",
-          transform: `translateX(${idx * 100}%)`,
-          transitionTimingFunction: "var(--ease-out-expo)",
-        }}
-      >
-        <span className="block mx-auto h-full w-16 rounded-full bg-accent/15" />
-      </span>
+    <>
+      {/* Scrim: lets the grid dissolve under the bar instead of hitting a hairline */}
+      <div
+        className="sm:hidden fixed bottom-0 left-0 right-0 h-28 z-30 pointer-events-none bg-gradient-to-t from-neutral-900 via-neutral-900/80 to-transparent"
+      />
 
-      {tabs.map((t) => (
-        <NavLink
-          key={t.to}
-          to={t.to}
-          end={t.end}
-          className="relative z-10 flex flex-col items-center gap-1 flex-1 py-2 text-[11px] font-medium tap"
-        >
-          {({ isActive }) => (
-            <>
-              <span className={`transition-colors ${isActive ? "text-accent-bright animate-pop" : "text-white/40"}`}>
-                {t.icon(isActive)}
-              </span>
-              <span className={`transition-colors ${isActive ? "text-accent-bright" : "text-white/40"}`}>
+      {/* Floating capsule, inset from the edges and clear of the home indicator */}
+      <nav
+        className="sm:hidden fixed left-4 right-4 z-40 flex items-center gap-1 p-1.5 rounded-full bg-neutral-800/70 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
+        {tabs.map((t, i) => {
+          const isActive = i === idx;
+          return (
+            <NavLink
+              key={t.to}
+              to={t.to}
+              end={t.end}
+              // Active tab grows into a labelled pill; the others stay icon-only.
+              // flex-grow animates, so the widths ease between states.
+              style={{
+                flexGrow: isActive ? 2.4 : 1,
+                transitionTimingFunction: "var(--ease-out-expo)",
+              }}
+              className={`relative flex items-center justify-center gap-1.5 h-11 rounded-full text-[13px] font-semibold tap transition-[flex-grow,background-color,color] duration-300 overflow-hidden ${
+                isActive
+                  ? "bg-accent text-white shadow-lg shadow-accent/25"
+                  : "text-white/45 hover:text-white/70"
+              }`}
+            >
+              <span className={isActive ? "animate-pop" : undefined}>{t.icon(isActive)}</span>
+              <span
+                className="whitespace-nowrap transition-all duration-300"
+                style={{
+                  maxWidth: isActive ? "6rem" : 0,
+                  opacity: isActive ? 1 : 0,
+                  transitionTimingFunction: "var(--ease-out-expo)",
+                }}
+              >
                 {t.label}
               </span>
-            </>
-          )}
-        </NavLink>
-      ))}
-    </nav>
+            </NavLink>
+          );
+        })}
+      </nav>
+    </>
   );
 }
