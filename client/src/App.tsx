@@ -30,7 +30,12 @@ export default function App() {
         style={{ height: "env(safe-area-inset-top)" }}
       />
       <NavBar onLogout={() => setAuthed(false)} />
-      <div key={location.pathname} className="animate-fade-in">
+      {/* The map fills the viewport and is meant to run under the tab bar; every
+          other route needs room to scroll clear of it. */}
+      <div
+        key={location.pathname}
+        className={`animate-fade-in${location.pathname.startsWith("/map") ? "" : " pb-tabbar"}`}
+      >
         <Routes location={location}>
           <Route path="/" element={<TimelinePage />} />
           <Route path="/map" element={<MapPage />} />

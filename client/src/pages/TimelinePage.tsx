@@ -183,9 +183,6 @@ export function TimelinePage() {
         </button>
       </div>
 
-      {/* Spacer for mobile bottom tab bar */}
-      <div className="sm:hidden" style={{ height: "calc(4rem + env(safe-area-inset-bottom))" }} />
-
       <SelectionActionBar />
     </div>
   );

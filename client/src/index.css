@@ -130,6 +130,14 @@ body {
   }
 }
 
+/* Clears the fixed bottom tab bar (plus the iOS home indicator) so the last row
+   of a scrolling page isn't trapped underneath it. The bar is mobile-only. */
+@media (max-width: 639px) {
+  .pb-tabbar {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* ---- Accessibility ---------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *,
