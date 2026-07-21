@@ -1,4 +1,6 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
+
+const HIDE_DELAY_MS = 1400;
 
 export interface ScrubberYear {
   year: string;
@@ -65,7 +67,27 @@ export function TimelineScrubber({ years, activeYear }: Props) {
     lastJumped.current = null;
   }, []);
 
+  // The grid now runs edge to edge underneath this strip, so it only becomes
+  // interactive while the user is actually scrolling — otherwise it would eat
+  // taps on the right-hand column. Same behaviour as the iOS Photos scrubber.
+  const [scrolling, setScrolling] = useState(false);
+  const hideTimer = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolling(true);
+      window.clearTimeout(hideTimer.current);
+      hideTimer.current = window.setTimeout(() => setScrolling(false), HIDE_DELAY_MS);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(hideTimer.current);
+    };
+  }, []);
+
   if (!years.length) return null;
+
+  const shown = scrolling || isDragging;
 
   return (
     <>
@@ -79,23 +101,31 @@ export function TimelineScrubber({ years, activeYear }: Props) {
       )}
       <div
         ref={stripRef}
-        className="fixed right-3 top-14 bottom-0 z-20 w-8 flex flex-col items-center justify-around py-4 select-none touch-none cursor-pointer"
+        className={`fixed right-1.5 top-16 bottom-20 sm:bottom-6 z-20 w-9 flex flex-col items-center justify-around py-3 select-none touch-none cursor-pointer rounded-full transition-opacity duration-300 ${
+          shown ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
       >
-        <div className="absolute inset-y-4 right-0 w-px bg-white/10 pointer-events-none" />
-        {years.map((y) => (
-          <span
-            key={y.year}
-            className={`text-[10px] font-bold leading-none z-10 transition-colors ${
-              activeYear === y.year ? "text-white" : "text-white/30"
-            }`}
-          >
-            {y.year}
-          </span>
-        ))}
+        <div className="absolute inset-0 rounded-full bg-neutral-800/70 backdrop-blur-md border border-white/8 pointer-events-none" />
+        {years.map((y) => {
+          const isActive = activeYear === y.year;
+          return (
+            <span
+              key={y.year}
+              className={`relative z-10 text-[10px] font-bold leading-none tabular-nums transition-colors ${
+                isActive ? "text-white" : "text-white/35"
+              }`}
+            >
+              {isActive && (
+                <span className="absolute -inset-x-1.5 -inset-y-1 rounded-full bg-accent -z-10" />
+              )}
+              {y.year}
+            </span>
+          );
+        })}
       </div>
     </>
   );

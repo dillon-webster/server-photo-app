@@ -8,6 +8,11 @@ import multipart from "@fastify/multipart";
 import staticFiles from "@fastify/static";
 import { db, sqlite, runMigrations } from "./db/client.js";
 import { ensureUploadDirs } from "./services/upload.js";
+import {
+  parseMaxUploadBytes,
+  fileTooLargeMessage,
+  isFileTooLargeError,
+} from "./services/uploadLimit.js";
 import { uploadRoutes } from "./routes/upload.js";
 import { photoRoutes } from "./routes/photos.js";
 import { albumRoutes } from "./routes/albums.js";
@@ -43,7 +48,20 @@ if (authEnabled) {
   app.log.warn("JWT_SECRET not set — auth is DISABLED and all data is public. Set JWT_SECRET to enable user accounts.");
 }
 
-await app.register(multipart, { limits: { fileSize: 500 * 1024 * 1024 } }); // 500 MB
+const MAX_UPLOAD_BYTES = parseMaxUploadBytes(process.env.MAX_UPLOAD_MB);
+await app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES } });
+
+// The multipart stream throws once a file exceeds the limit, which escapes the
+// upload route's per-file try/catch — turn it into a message worth reading.
+app.setErrorHandler((err, req, reply) => {
+  if (isFileTooLargeError(err)) {
+    req.log.warn({ err }, "upload rejected: file over size limit");
+    return reply
+      .status(413)
+      .send({ error: fileTooLargeMessage(MAX_UPLOAD_BYTES), maxBytes: MAX_UPLOAD_BYTES });
+  }
+  return reply.send(err);
+});
 
 // Serve upload files
 await app.register(staticFiles, {

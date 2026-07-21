@@ -74,7 +74,11 @@ export function MapPage() {
 
   return (
     <>
-      <div className="sm:h-[calc(100dvh-49px)]" style={{ height: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 49px)" }}>
+      {/* `isolate` is load-bearing: Leaflet's container is positioned but has no
+          z-index, so without a stacking context here its panes (200-700) and
+          controls (1000) escape into the root context and paint over the fixed
+          bottom tab bar. Containing them keeps the bar reachable on this route. */}
+      <div className="isolate sm:h-[calc(100dvh-49px)]" style={{ height: "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 49px)" }}>
         <MapContainer
           bounds={bounds}
           boundsOptions={{ padding: [40, 40] }}

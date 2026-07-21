@@ -88,7 +88,7 @@ export function useUpload(
         setUploads((prev) =>
           prev.map((item, i) =>
             i >= prev.length - files.length
-              ? { ...item, error: String(err) }
+              ? { ...item, error: err instanceof Error ? err.message : String(err) }
               : item
           )
         );
